@@ -26,7 +26,6 @@
 <meta name="twitter:title" content="Santhoopa Jayawardhana — Full-Stack & AI/ML Engineer" />
 <meta name="twitter:description" content="Associate Technical Lead building production-grade web platforms, agentic AI and real-time data systems. Based in Colombo, Sri Lanka." />
 
-<script defer src="https://cloud.umami.is/script.js" data-website-id="f50ec3c0-bdfc-4fc1-bf0c-1e9a7f6c98b9"></script>
 <!-- Structured data -->
 <script type="application/ld+json">
 {
@@ -47,6 +46,9 @@
 
 <!-- Tidio live chat -->
 <script src="//code.tidio.co/fu2uphrmnwkkldolez1k0hqzzx7jeao3.js" async></script>
+
+<!-- Umami analytics -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="f50ec3c0-bdfc-4fc1-bf0c-1e9a7f6c98b9"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -414,17 +416,108 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     .cursor { display: none; }
     .services, .svc-grid { grid-template-columns: 1fr !important; }
     .edu, .edu-grid, .edu-extra { grid-template-columns: 1fr !important; }
-    .hud { grid-template-columns: 1fr 1fr; }
+    .hud { grid-template-columns: 1fr auto; }
     .hud .c { display: none; }
     .hero, .section-head, .about-body, .skills, .papers, .work, .xp, .contact { grid-template-columns: 1fr !important; gap: 20px; }
     .hero-side, .section-kv, .hud-panel, .xp-item { grid-template-columns: 1fr !important; }
+    .ticker, .marquee { grid-column: 1 / -1 !important; }
+    .section-head > *, .about-body > *, .skills > *, .papers > *, .xp > *, .contact > *, .work > * { grid-column: auto !important; }
+    .paper:first-of-type, .research-intro { grid-column: auto !important; }
     .work-row { grid-template-columns: 40px 1fr; gap: 12px; }
     .work-row .stack, .work-row .year, .work-row .arr { display: none; }
+    .work-detail-inner { grid-template-columns: 1fr !important; gap: 16px; padding-left: 0 !important; }
     .xp-item { grid-template-columns: 1fr; }
     .xp-list { padding-left: 20px; }
     .hero-foot { grid-template-columns: repeat(2, 1fr); }
+    .work > div:empty, .xp > div:empty, .skills > div:empty, .services > div:empty, .papers > div:empty, .about-body > div:empty { display: none !important; }
     .btn { cursor: pointer; }
     .pill { cursor: pointer; }
+  }
+
+  /* ===== PHONE ===== */
+  @media (max-width: 640px) {
+    html, body { font-size: 14px; }
+    main { padding: 64px 16px 16px !important; }
+
+    /* HUD: keep brand left, clock right; drop coordinates & version */
+    .hud { padding: 11px 16px; gap: 10px; font-size: 9.5px; letter-spacing: .08em; }
+    .hud .l { gap: 10px; min-width: 0; }
+    .hud .l span:nth-child(2) { display: none; }   /* lat/lng */
+    .hud .r { gap: 10px; }
+    .hud .r span:first-child { display: none; }     /* SYS version */
+
+    /* Hero */
+    .hero { padding-top: 24px; min-height: 0; gap: 22px; }
+    .hero-main { gap: 22px; }
+    .kicker { font-size: 10px; letter-spacing: .14em; }
+    .hero-title { font-size: 44px !important; line-height: .94 !important; letter-spacing: -0.03em; }
+    .hero-title .bracket { font-size: .22em; }
+    .hero-sub { font-size: 15px !important; }
+    .hero-side { order: 2; }
+    .hero aside:not(.hero-side) { order: 3; }
+    .ticker { order: 4; }
+    .hero-foot { grid-template-columns: 1fr 1fr; gap: 16px 12px; }
+    .stat b { font-size: 30px !important; }
+    .btn-row { grid-column: 1 / 3; flex-wrap: wrap; }
+    .btn { flex: 1; justify-content: center; padding: 13px 14px; }
+
+    /* HUD telemetry panels: hide the heavier readout block, keep one */
+    .hero aside .hud-panel:last-child { display: none; }
+    .ticker { margin-top: 8px; }
+
+    /* Section rhythm */
+    .section { padding: 52px 0 30px; }
+    .section-head { margin-bottom: 30px; gap: 14px; }
+    .section-title { font-size: 32px !important; }
+    .meta-tag, .section-kv { font-size: 10px; }
+    .section-kv { text-align: left; }
+
+    /* About */
+    .about-col { font-size: 15px !important; }
+    .about-body .hud-panel { order: 2; }
+
+    /* Work */
+    .work-row { grid-template-columns: 30px 1fr 26px; padding: 18px 0; gap: 10px; }
+    .work-row .arr { display: block; font-size: 17px; }
+    .work-row h3 { font-size: 19px; }
+    .work-row .client { font-size: 9px; }
+    .work-item.open .work-row, .work-row:hover { padding-left: 8px; }
+
+    /* Experience */
+    .xp-list { padding-left: 16px; }
+    .xp-item { padding: 14px 0 20px; }
+    .xp-item::before { left: -22px; top: 20px; }
+    .xp-item::after { left: -19px; top: 23px; }
+    .xp-role h4 { font-size: 18px; }
+
+    /* Education / Research / Services cards */
+    .edu-card, .svc-card, .paper { padding: 18px; }
+    .edu-card h4 { font-size: 19px; }
+    .svc-card { min-height: 0; }
+    .research-intro .big { font-size: 32px; }
+
+    /* Skills */
+    .skills { gap: 18px; }
+
+    /* Contact */
+    .contact { padding: 56px 0 40px; }
+    .contact h2 { font-size: 52px !important; }
+    .contact .links a { padding: 13px 6px; font-size: 10.5px; }
+
+    /* Footer stacks */
+    footer { grid-template-columns: 1fr; gap: 8px; text-align: left; }
+    footer .c, footer .r { text-align: left; }
+
+    /* Tame background grid density */
+    .bg-grid { background-size: 48px 48px; }
+  }
+
+  /* very narrow */
+  @media (max-width: 380px) {
+    .hero-title { font-size: 38px !important; }
+    .hero-foot { grid-template-columns: 1fr; }
+    .btn-row { grid-column: 1; }
+    .contact h2 { font-size: 42px !important; }
   }
 </style>
 </head>
@@ -497,7 +590,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
       <div class="stat"><b>05<i>+</i></b><span>Yrs shipping</span></div>
       <div class="stat"><b>04</b><span>Peer-reviewed</span></div>
       <div class="btn-row">
-        <a href="#work" class="btn primary" data-umami-event="Run Work Clicked" >Run.work() <span>▸</span></a>
+        <a href="#work" class="btn primary" data-umami-event="Run Work Clicked">Run.work() <span>▸</span></a>
         <a href="#contact" class="btn" data-umami-event="Ping Link Clicked">Ping <span>↗</span></a>
       </div>
     </div>
@@ -761,7 +854,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     <div class="research-intro">
       <b>// ENGAGE</b>
       Available for product builds, AI integrations, and technical leadership — delivered end to end or embedded with your team. If you have something to ship, let's talk.
-      <a href="#contact" class="btn primary" data-umami-event="Start a Project Clicked" >Start a project <span>▸</span></a>
+      <a href="#contact" class="btn primary" data-umami-event="Start a Project Clicked">Start a project <span>▸</span></a>
     </div>
     <div class="svc-grid">
       <div class="svc-card hov">
@@ -810,6 +903,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   <h2>Open a <em>channel</em><span class="cursor-blink"></span></h2>
   <div class="links">
     <a href="https://www.linkedin.com/in/santhoopa-jayawardhana-baa058132" target="_blank" rel="noopener" data-umami-event="LinkedIn Link Clicked"><span>LINKEDIN · /in/santhoopa</span><span>↗</span></a>
+    <a href="https://www.researchgate.net/profile/Santhoopa-Jayawardhana" target="_blank" rel="noopener" data-umami-event="ResearchGate Link Clicked"><span>RESEARCHGATE · /Santhoopa-Jayawardhana</span><span>↗</span></a>
     <a href="https://drive.google.com/file/d/1kuFPwcFv4IHtjDfdI-8wmyDgyLX-EwwT/view?usp=drive_link" data-umami-event="CV Download Clicked"><span>DOWNLOAD · CV.pdf</span><span>↓</span></a>
   </div>
 </section>
