@@ -225,10 +225,10 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .ticker::before, .ticker::after { content: ""; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 2; pointer-events: none; }
   .ticker::before { left: 0; background: linear-gradient(to right, var(--bg), transparent); }
   .ticker::after { right: 0; background: linear-gradient(to left, var(--bg), transparent); }
-  .ticker-track { display: inline-block; animation: scroll 80s linear infinite; }
+  .ticker-track { display: inline-block; animation: tickerScroll 80s linear infinite; }
   .ticker-track span { margin: 0 22px; }
   .ticker-track .s { color: var(--accent); }
-  @keyframes scroll { from { transform: translateX(0);} to { transform: translateX(-50%);} }
+  @keyframes tickerScroll { from { transform: translateX(0);} to { transform: translateX(-50%);} }
 
   /* ===== ABOUT ===== */
   .about-body { display: grid; grid-template-columns: 220px 1fr 280px; gap: 32px; }
@@ -334,7 +334,12 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .contact .links a span:last-child { color: var(--ink-4); transition: color .25s, transform .25s; }
   .contact .links a:hover span:last-child { color: var(--accent); transform: translate(3px, -3px); }
 
-  footer { padding: 20px 24px; border-top: 1px solid var(--rule); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-4); }
+  footer { padding: 20px 24px; border-top: 1px solid var(--rule); display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-4); }
+  footer .c { text-align: center; }
+  footer .r { text-align: right; }
+  .foot-links { display: flex; gap: 18px; justify-content: center; }
+  .foot-links a { color: var(--ink-3); transition: color .25s; }
+  .foot-links a:hover { color: var(--accent); }ransform: uppercase; color: var(--ink-4); }
   footer .c { text-align: center; }
   footer .r { text-align: right; }
 
@@ -505,8 +510,12 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     .contact .links a { padding: 13px 6px; font-size: 10.5px; }
 
     /* Footer stacks */
-    footer { grid-template-columns: 1fr; gap: 8px; text-align: left; }
+    footer { grid-template-columns: 1fr; gap: 12px; text-align: left; }
     footer .c, footer .r { text-align: left; }
+    .foot-links { justify-content: flex-start; flex-wrap: wrap; gap: 14px; }
+
+    /* Custom cursor never on touch */
+    .cursor { display: none !important; }
 
     /* Tame background grid density */
     .bg-grid { background-size: 48px 48px; }
@@ -912,9 +921,13 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 </main>
 
 <footer>
-  <div class="l">SANTHOOPA.J · PORTFOLIO v.02 // FUTURISTIC</div>
-  <div class="c">BUILT IN COLOMBO · 2026</div>
-  <div class="r">◆ END-OF-TRANSMISSION</div>
+  <div class="l">SANTHOOPA JAYAWARDHANA · © 2026</div>
+  <div class="c foot-links">
+    <a href="https://www.linkedin.com/in/santhoopa-jayawardhana-baa058132" target="_blank" rel="noopener me" data-umami-event="Footer LinkedIn">LinkedIn</a>
+    <a href="https://github.com/santhoopa" target="_blank" rel="noopener me" data-umami-event="Footer GitHub">GitHub</a>
+    <a href="https://www.researchgate.net/profile/Santhoopa-Jayawardhana" target="_blank" rel="noopener me" data-umami-event="Footer ResearchGate">ResearchGate</a>
+  </div>
+  <div class="r">BUILT IN COLOMBO ◆ 2026</div>
 </footer>
 
 <aside id="tweaks">
@@ -1205,11 +1218,15 @@ const sio = new IntersectionObserver((entries) => {
 secs.forEach(s => sio.observe(s));
 
 // Custom cursor
+const isTouchDevice = window.matchMedia('(hover: none), (pointer: coarse)').matches;
 const cur = document.getElementById('cursor');
 let cx = 0, cy = 0, tx = 0, ty = 0;
-window.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
-function loop(){ cx += (tx - cx) * 0.5; cy += (ty - cy) * 0.5; cur.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`; requestAnimationFrame(loop); }
-loop();
+if (!isTouchDevice) {
+  window.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+  (function loop(){ cx += (tx - cx) * 0.5; cy += (ty - cy) * 0.5; cur.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`; requestAnimationFrame(loop); })();
+} else {
+  cur.style.display = 'none';
+}
 document.addEventListener('mouseover', e => {
   if (e.target.closest('a, button, .pill, .work-row, .paper')) cur.classList.add('hover');
   else cur.classList.remove('hover');
@@ -1220,8 +1237,8 @@ function applyT(t){
   document.documentElement.style.setProperty('--accent', t.accent);
   document.getElementById('scan').style.display = t.scanlines ? 'block' : 'none';
   document.getElementById('bggrid').style.display = t.grid ? 'block' : 'none';
-  if (t.cursor) { document.body.style.cursor = 'none'; cur.style.display = 'block'; }
-  else { document.body.style.cursor = 'auto'; cur.style.display = 'none'; }
+  if (t.cursor && !isTouchDevice) { document.body.style.cursor = 'none'; cur.style.display = 'block'; }
+  else { document.body.style.cursor = ''; cur.style.display = 'none'; }
   document.querySelectorAll('#tw-accent button').forEach(b => b.classList.toggle('sel', b.dataset.v === t.accent));
   document.querySelectorAll('#tw-scan button').forEach(b => b.classList.toggle('sel', b.dataset.v === (t.scanlines ? 'on':'off')));
   document.querySelectorAll('#tw-grid button').forEach(b => b.classList.toggle('sel', b.dataset.v === (t.grid ? 'on':'off')));
