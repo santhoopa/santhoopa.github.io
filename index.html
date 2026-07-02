@@ -1274,6 +1274,8 @@ function tick(){
 tick(); setInterval(tick, 1000);
 
 /* ============ BOOT LOADER ============ */
+/* BOOT_COUNT_MS: time to count 0→100 · BOOT_HOLD_MS: pause at 100% · curtain reveal adds ~1s after */
+const BOOT_COUNT_MS = 1500, BOOT_HOLD_MS = 400;
 const loader = $('#loader');
 const logEl = $('#boot-log'), pctEl = $('#boot-pct'), barEl = $('#boot-bar');
 const LOGS = [
@@ -1294,8 +1296,9 @@ if (reduced) {
   document.body.classList.add('loaded');
 } else {
   let p = 0, li = 0;
+  const TICK = 120, STEP = 100 / (BOOT_COUNT_MS / TICK);
   const iv = setInterval(() => {
-    p = Math.min(100, p + Math.random() * 6 + 2.5);
+    p = Math.min(100, p + STEP * (0.5 + Math.random()));
     pctEl.textContent = String(Math.floor(p)).padStart(3, '0');
     barEl.style.transform = `scaleX(${p / 100})`;
     const want = Math.floor(p / (100 / LOGS.length));
@@ -1304,8 +1307,8 @@ if (reduced) {
       l.textContent = '▸ ' + LOGS[li++];
       logEl.appendChild(l);
     }
-    if (p >= 100) { clearInterval(iv); setTimeout(finishLoad, 650); }
-  }, 120);
+    if (p >= 100) { clearInterval(iv); setTimeout(finishLoad, BOOT_HOLD_MS); }
+  }, TICK);
 }
 
 /* Hidden/suspended context (background tab, capture iframe): reveal instantly */
