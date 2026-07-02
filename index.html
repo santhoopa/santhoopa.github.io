@@ -164,13 +164,15 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .hud .l, .hud .r { display: flex; align-items: center; gap: 18px; color: var(--ink-3); }
   .hud .r { justify-content: flex-end; }
   .hud .c { display: flex; gap: 20px; }
-  .hud .c a { position: relative; padding: 2px 0; color: var(--ink-3); transition: color .2s; }
+  .hud .c a { position: relative; padding: 2px 0; color: var(--ink-3); transition: color .2s; white-space: nowrap; }
   .hud .c a:hover, .hud .c a.active { color: var(--accent); }
   .hud .c a.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: var(--accent); }
   .hud .l > span, .hud .r > span { display: inline-flex; align-items: center; gap: 6px; }
   .hud b { color: var(--ink); font-weight: 500; }
   .hud .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); animation: blink 1.6s ease-in-out infinite; display: inline-block; }
   @keyframes blink { 50% { opacity: .3; } }
+  @media (max-width: 1560px) { .hud .l span:nth-child(2) { display: none; } .hud .c { gap: 14px; } }
+  @media (max-width: 1280px) { .hud .r span:first-child { display: none; } .hud .c { gap: 11px; } .hud { gap: 14px; } }
 
   main { padding: 70px 24px 0; }
   .frame { max-width: 1440px; margin: 0 auto; }
@@ -339,6 +341,9 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .edu-card .honors span.gold { color: var(--accent); border-color: var(--accent); }
 
   .papers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .blog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .blog-card h4 { font-size: 22px; }
+  .blog-more { margin-top: 24px; }
   .paper .tag { font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
   .paper h4 { font-size: 18px; font-weight: 400; line-height: 1.3; }
   .paper .desc { font-size: 12.5px; line-height: 1.6; color: var(--ink-3); }
@@ -411,7 +416,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     .work-row .stack, .work-row .year { display: none; }
     .work-detail-inner { grid-template-columns: 1fr; padding-left: 0; gap: 16px; }
     .xp-item { grid-template-columns: 1fr; gap: 10px; }
-    .papers-grid, .svc-grid, .edu-grid, .skills-grid { grid-template-columns: 1fr; }
+    .papers-grid, .svc-grid, .edu-grid, .skills-grid, .blog-grid { grid-template-columns: 1fr; }
     .hud .c { display: none; }
     .hud { grid-template-columns: 1fr auto; }
     .hero { grid-template-columns: 1fr; min-height: 0; }
@@ -477,8 +482,9 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     <a href="#experience" data-sec="experience" class="scr">03 · Experience</a>
     <a href="#education" data-sec="education" class="scr">04 · Education</a>
     <a href="#research" data-sec="research" class="scr">05 · Research</a>
-    <a href="#services" data-sec="services" class="scr">06 · Work With Me</a>
-    <a href="#contact" data-sec="contact" class="scr">07 · Contact</a>
+    <a href="#blog" data-sec="blog" class="scr">06 · Blog</a>
+    <a href="#services" data-sec="services" class="scr">07 · Work With Me</a>
+    <a href="#contact" data-sec="contact" class="scr">08 · Contact</a>
   </nav>
   <div class="r">
     <span>SYS <b>v2.7.0</b></span>
@@ -679,9 +685,32 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   </div>
 </section>
 
+<!-- ============ BLOG ============ -->
+<section class="section" id="blog" data-screen-label="Blog">
+  <div class="ghost" data-anim="fade-up">06<small>Blog</small></div>
+  <div>
+    <h2 class="section-title" data-split="words">Thinking out <em>loud</em>.</h2>
+    <div class="blog-grid">
+      <a class="card paper tilt blog-card" href="https://medium.com/towards-artificial-intelligence/ai-to-detect-hate-speech-related-sinhala-comments-in-social-media-b94196744eec" target="_blank" rel="noopener" data-anim="fade-up" data-umami-event="Blog Sinhala Hate Speech Clicked">
+        <span class="tag">DEEP LEARNING · NLP</span>
+        <h4>AI to Detect Hate Speech related Sinhala Comments in Social Media</h4>
+        <p class="desc">Using deep learning models to detect Sinhala hate speech on social media — applying NLP to a low-resource language.</p>
+        <span class="venue">TOWARDS AI · NOV 2020 · READ ↗</span>
+      </a>
+      <a class="card paper tilt blog-card" href="https://medium.com/data-science/sequence-models-and-recurrent-neural-networks-rnns-62cadeb4f1e1" target="_blank" rel="noopener" data-anim="fade-up" data-delay="130" data-umami-event="Blog RNN Clicked">
+        <span class="tag">DEEP LEARNING · SEQUENCE MODELS</span>
+        <h4>Sequence Models &amp; Recurrent Neural Networks (RNNs)</h4>
+        <p class="desc">Understanding deep recurrent neural networks — how sequence models work and where RNNs fit.</p>
+        <span class="venue">TOWARDS DATA SCIENCE · JUL 2020 · READ ↗</span>
+      </a>
+    </div>
+    <div class="blog-more" data-anim="fade-up"><a class="btn magnet" href="https://medium.com/@santhoopajayawardhana" target="_blank" rel="noopener" data-umami-event="Medium Profile Clicked"><span>All posts on Medium</span> <span>↗</span></a></div>
+  </div>
+</section>
+
 <!-- ============ SKILLS ============ -->
 <section class="section" id="skills" data-screen-label="Skills">
-  <div class="ghost" data-anim="fade-up">06<small>Stack</small></div>
+  <div class="ghost" data-anim="fade-up">07<small>Stack</small></div>
   <div>
     <h2 class="section-title" data-split="words">Tools of the <em>trade</em>.</h2>
     <div class="skills-grid">
@@ -711,7 +740,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 
 <!-- ============ SERVICES ============ -->
 <section class="section" id="services" data-screen-label="Work With Me">
-  <div class="ghost" data-anim="fade-up">07<small>Engage</small></div>
+  <div class="ghost" data-anim="fade-up">08<small>Engage</small></div>
   <div>
     <h2 class="section-title" data-split="words">What I can <em>build</em> for you.</h2>
     <div class="svc-intro" data-anim="fade-up">
@@ -762,7 +791,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 
 <!-- ============ CONTACT ============ -->
 <section class="contact" id="contact" data-screen-label="Contact">
-  <div class="k" data-anim="fade-up">// 08 · CONTACT — OPEN CHANNEL</div>
+  <div class="k" data-anim="fade-up">// 09 · CONTACT — OPEN CHANNEL</div>
   <h2><span data-split="chars">Open a</span> <em data-anim="fade-up" data-delay="400">channel</em><span class="cursor-blink"></span></h2>
   <div class="links" data-anim="fade-up" data-delay="300">
     <a class="btn magnet" href="https://www.linkedin.com/in/santhoopa-jayawardhana-baa058132" target="_blank" rel="noopener" data-umami-event="LinkedIn Link Clicked"><span>LinkedIn</span> <span>↗</span></a>
@@ -781,6 +810,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     <a href="https://www.linkedin.com/in/santhoopa-jayawardhana-baa058132" target="_blank" rel="noopener me" data-umami-event="Footer LinkedIn">LinkedIn</a>
     <a href="https://github.com/santhoopa" target="_blank" rel="noopener me" data-umami-event="Footer GitHub">GitHub</a>
     <a href="https://www.researchgate.net/profile/Santhoopa-Jayawardhana" target="_blank" rel="noopener me" data-umami-event="Footer ResearchGate">ResearchGate</a>
+    <a href="https://medium.com/@santhoopajayawardhana" target="_blank" rel="noopener me" data-umami-event="Footer Medium">Medium</a>
   </div>
   <div class="r">BUILT IN COLOMBO ◆ 2026</div>
 </footer>
@@ -1297,8 +1327,24 @@ function drawField(){
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(cmx, cmy); ctx.stroke();
     }
   }
+  /* Click sparks (revertable) */
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.x += s.vx; s.y += s.vy; s.vx *= .96; s.vy *= .96; s.life -= .025;
+    if (s.life <= 0) { sparks.splice(i, 1); continue; }
+    ctx.globalAlpha = s.life * .9; ctx.fillStyle = ac;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r * s.life + .3, 0, 7); ctx.fill();
+  }
   ctx.globalAlpha = 1;
 }
+const sparks = [];
+addEventListener('pointerdown', e => {
+  if (reduced) return;
+  for (let i = 0; i < 14; i++) {
+    const a = Math.random() * Math.PI * 2, sp = (Math.random() * 3 + 1.2) * devicePixelRatio;
+    sparks.push({ x: e.clientX * devicePixelRatio, y: e.clientY * devicePixelRatio, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, r: (Math.random() * 1.6 + .6) * devicePixelRatio });
+  }
+});
 drawField();
 
 /* ============ CLOCK + UPTIME ============ */
