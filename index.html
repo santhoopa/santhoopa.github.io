@@ -193,7 +193,8 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .hero-foot { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 24px; align-items: end; padding-top: 24px; border-top: 1px solid var(--rule); }
   .stat b { font-weight: 300; font-size: 40px; line-height: 1; color: var(--ink); letter-spacing: -.02em; display: block; }
   .stat b i { color: var(--accent); font-style: normal; }
-  .stat span { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-top: 8px; display: block; }
+  .stat b span { font: inherit; color: inherit; display: inline; margin: 0; letter-spacing: inherit; }
+  .stat > span { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-top: 8px; display: block; }
   .btn-row { display: flex; gap: 10px; }
   .btn {
     position: relative; display: inline-flex; align-items: center; gap: 10px;
@@ -413,10 +414,10 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     .papers-grid, .svc-grid, .edu-grid, .skills-grid { grid-template-columns: 1fr; }
     .hud .c { display: none; }
     .hud { grid-template-columns: 1fr auto; }
-    .hero { grid-template-columns: 1fr; }
+    .hero { grid-template-columns: 1fr; min-height: 0; }
+    .ticker { order: 4; grid-column: auto; margin-top: 0; }
     .hero-side { order: 2; }
     .hero aside:not(.hero-side) { order: 3; }
-    .ticker { order: 4; grid-column: auto; }
     .hero-foot { grid-template-columns: repeat(2, 1fr); }
     .btn-row { grid-column: 1 / -1; flex-wrap: wrap; }
   }
