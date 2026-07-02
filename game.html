@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Play — Santhoopa Jayawardhana</title>
+<meta name="description" content="A tiny asteroids game. Built for fun by Santhoopa Jayawardhana." />
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/png" href="favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05060A;
+    --bg-2: #0A0C14;
+    --ink: #E8EEF5;
+    --ink-2: #BEC7D4;
+    --ink-3: #6A7484;
+    --rule: #1A1F2B;
+    --rule-2: #262D3D;
+    --accent: #6EF5C8;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --display: "Space Grotesk", sans-serif;
+    --ease: cubic-bezier(.16, 1, .3, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--mono); overflow: hidden; }
+  ::selection { background: var(--accent); color: #000; }
+
+  #game { position: fixed; inset: 0; display: block; }
+  .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 5; box-shadow: inset 0 0 220px rgba(0,0,0,.85); }
+
+  /* HUD bar */
+  .hud { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; padding: 14px 22px; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--rule); background: rgba(5,6,10,.66); backdrop-filter: blur(14px); }
+  .hud b { color: var(--ink); font-weight: 500; }
+  .hud .grp { display: flex; gap: 22px; align-items: center; }
+  .hud .val { color: var(--accent); }
+  .hud a { color: var(--ink-3); text-decoration: none; transition: color .2s; white-space: nowrap; }
+  .hud a:hover { color: var(--accent); }
+  .hud .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); display: inline-block; margin-right: 8px; animation: blink 1.6s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .3; } }
+
+  /* Overlays */
+  .overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(5,6,10,.72); backdrop-filter: blur(6px); transition: opacity .4s, visibility .4s; }
+  .overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .panel { width: min(460px, 88vw); padding: 30px; background: var(--bg-2); border: 1px solid var(--rule-2); clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); position: relative; }
+  .panel::before { content: ""; position: absolute; top: 0; left: 0; right: 14px; height: 2px; background: var(--accent); }
+  .panel .k { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+  .panel h1 { font-family: var(--display); font-weight: 300; font-size: 40px; letter-spacing: -.02em; line-height: 1; margin-bottom: 16px; }
+  .panel p { font-size: 12px; line-height: 1.7; color: var(--ink-2); margin-bottom: 8px; }
+  .panel p b { color: var(--accent); font-weight: 500; }
+  .panel .rows { margin: 18px 0 22px; border-top: 1px solid var(--rule); }
+  .panel .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .1em; }
+  .panel .row span:last-child { color: var(--ink); }
+  .panel .row.how { border-bottom: 1px solid var(--rule-2); }
+  .panel .row.how span:first-child { color: var(--accent); letter-spacing: .2em; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border: 1px solid var(--accent); background: var(--accent); color: #000; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; cursor: pointer; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)); transition: background .25s, color .25s; }
+  .btn:hover { background: transparent; color: var(--accent); }
+  .btn.ghost { background: transparent; color: var(--ink-2); border-color: var(--rule-2); }
+  .btn.ghost:hover { color: var(--accent); border-color: var(--accent); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* Touch controls */
+  #touch { position: fixed; bottom: 0; left: 0; right: 0; z-index: 15; display: none; justify-content: space-between; padding: 0 18px calc(18px + env(safe-area-inset-bottom)); pointer-events: none; }
+  #touch .cluster { display: flex; gap: 12px; pointer-events: auto; }
+  #touch button { width: 62px; height: 62px; border-radius: 50%; border: 1px solid var(--rule-2); background: rgba(10,12,20,.7); color: var(--accent); font-size: 20px; font-family: var(--mono); backdrop-filter: blur(6px); touch-action: none; user-select: none; -webkit-user-select: none; }
+  #touch button:active { background: var(--accent); color: #000; }
+  body.touch #touch { display: flex; }
+
+  @media (max-width: 640px) {
+    .hud { padding: 10px 14px; font-size: 9px; }
+    .hud .grp { gap: 12px; }
+    .hud .hide-m { display: none; }
+    .panel h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+<div class="vignette"></div>
+
+<header class="hud">
+  <div class="grp">
+    <span><span class="dot"></span>DEBRIS.FIELD // SIM</span>
+    <span class="hide-m">SECTOR <b>LK-79.85</b></span>
+  </div>
+  <div class="grp">
+    <span>SCORE <b class="val" id="h-score">000000</b></span>
+    <span>WAVE <b class="val" id="h-wave">01</b></span>
+    <span>INTEGRITY <b class="val" id="h-lives">◆ ◆ ◆</b></span>
+    <span class="hide-m">BEST <b id="h-best">000000</b></span>
+  </div>
+  <div class="grp">
+    <a href="index.html" data-umami-event="Game Back to Portfolio">◂ BACK TO PORTFOLIO</a>
+  </div>
+</header>
+
+<!-- START -->
+<div class="overlay" id="ov-start">
+  <div class="panel">
+    <div class="k">// DEBRIS.FIELD — SIMULATION 01</div>
+    <h1>Clear the field.</h1>
+    <p>The particle field drifted too close. Someone has to clean it up.</p>
+    <div class="rows">
+      <div class="row how"><span>How to play</span><span></span></div>
+      <div class="row"><span>Objective</span><span>Shoot every rock to clear the wave</span></div>
+      <div class="row"><span>Watch out</span><span>Big rocks split into two smaller ones</span></div>
+      <div class="row"><span>Scoring</span><span>Small rocks are worth more — 100 pts</span></div>
+      <div class="row"><span>Integrity</span><span>3 hits and it's over · ◆ ◆ ◆</span></div>
+      <div class="row how"><span>Controls</span><span></span></div>
+      <div class="row"><span>Rotate</span><span>← → or A D</span></div>
+      <div class="row"><span>Thrust</span><span>↑ or W · ship drifts, edges wrap</span></div>
+      <div class="row"><span>Fire</span><span>SPACE</span></div>
+      <div class="row"><span>Pause</span><span>P or ESC</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btn-start" data-umami-event="Game Started">Launch ▸</button>
+      <a class="btn ghost" href="index.html">Abort</a>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay hidden" id="ov-over">
+  <div class="panel">
+    <div class="k">// CONNECTION LOST</div>
+    <h1>Ship destroyed.</h1>
+    <div class="rows">
+      <div class="row"><span>Final score</span><span id="f-score">0</span></div>
+      <div class="row"><span>Waves cleared</span><span id="f-wave">0</span></div>
+      <div class="row"><span>Session best</span><span id="f-best">0</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btn-retry" data-umami-event="Game Retried">Reboot ▸</button>
+      <a class="btn ghost" href="index.html">Back to portfolio</a>
+    </div>
+  </div>
+</div>
+
+<!-- PAUSE -->
+<div class="overlay hidden" id="ov-pause">
+  <div class="panel">
+    <div class="k">// SIM SUSPENDED</div>
+    <h1>Paused.</h1>
+    <div class="btn-row" style="margin-top: 18px;">
+      <button class="btn" id="btn-resume">Resume ▸</button>
+      <a class="btn ghost" href="index.html">Exit</a>
+    </div>
+  </div>
+</div>
+
+<div id="touch">
+  <div class="cluster">
+    <button id="t-left" aria-label="Rotate left">⟲</button>
+    <button id="t-right" aria-label="Rotate right">⟳</button>
+  </div>
+  <div class="cluster">
+    <button id="t-thrust" aria-label="Thrust">▲</button>
+    <button id="t-fire" aria-label="Fire">●</button>
+  </div>
+</div>
+
+<script>
+/* DEBRIS.FIELD — asteroids mini-game */
+(function(){
+'use strict';
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+const DPR = Math.min(devicePixelRatio || 1, 2);
+let W, H;
+function resize(){
+  W = cv.width = innerWidth * DPR;
+  H = cv.height = innerHeight * DPR;
+  cv.style.width = innerWidth + 'px';
+  cv.style.height = innerHeight + 'px';
+}
+resize(); addEventListener('resize', resize);
+
+const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+if (isTouch) document.body.classList.add('touch');
+
+const ACCENT = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6EF5C8';
+const rand = (a, b) => a + Math.random() * (b - a);
+const TAU = Math.PI * 2;
+
+/* ---------- state ---------- */
+const S = { mode: 'start', score: 0, wave: 0, lives: 3, best: 0 };
+try { S.best = parseInt(localStorage.getItem('debris-best') || '0', 10) || 0; } catch(e){}
+
+const ship = { x: 0, y: 0, a: -Math.PI/2, vx: 0, vy: 0, r: 13, inv: 0, thrusting: false, dead: 0 };
+let rocks = [], bullets = [], sparks = [], stars = [];
+let lastShot = 0;
+
+function initStars(){
+  stars = Array.from({ length: Math.min(70, Math.floor(innerWidth / 20)) }, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    r: rand(.3, 1.2) * DPR, tw: Math.random() * TAU
+  }));
+}
+initStars();
+
+/* ---------- input ---------- */
+const keys = {};
+addEventListener('keydown', e => {
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+  keys[e.key.toLowerCase()] = true;
+  if (S.mode === 'play' && (e.key === 'p' || e.key === 'P' || e.key === 'Escape')) pause();
+  else if (S.mode === 'pause' && (e.key === 'p' || e.key === 'P' || e.key === 'Escape')) resume();
+  else if (S.mode === 'start' && (e.key === ' ' || e.key === 'Enter')) start();
+  else if (S.mode === 'over' && (e.key === 'r' || e.key === 'R' || e.key === ' ' || e.key === 'Enter')) start();
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+function bindTouch(id, key){
+  const el = document.getElementById(id);
+  if (!el) return;
+  const on = e => { e.preventDefault(); keys[key] = true; };
+  const off = e => { e.preventDefault(); keys[key] = false; };
+  el.addEventListener('touchstart', on, { passive: false });
+  el.addEventListener('touchend', off, { passive: false });
+  el.addEventListener('touchcancel', off, { passive: false });
+}
+bindTouch('t-left', 'arrowleft');
+bindTouch('t-right', 'arrowright');
+bindTouch('t-thrust', 'arrowup');
+bindTouch('t-fire', ' ');
+
+/* ---------- helpers ---------- */
+function wrap(o){
+  const m = 30 * DPR;
+  if (o.x < -m) o.x = W + m; if (o.x > W + m) o.x = -m;
+  if (o.y < -m) o.y = H + m; if (o.y > H + m) o.y = -m;
+}
+function burst(x, y, n, spd){
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * TAU, sp = rand(.6, spd) * DPR;
+    sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, r: rand(.6, 2) * DPR });
+  }
+}
+function makeRock(x, y, size){
+  const verts = [], n = Math.floor(rand(8, 12));
+  for (let i = 0; i < n; i++) verts.push(rand(.72, 1.15));
+  const a = Math.random() * TAU, sp = (rand(.5, 1.4) + S.wave * .12) * DPR;
+  return { x, y, size, r: size * 11 * DPR, verts, rot: Math.random() * TAU, vrot: rand(-.02, .02), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp };
+}
+function spawnWave(){
+  S.wave++;
+  const count = Math.min(3 + S.wave, 9);
+  for (let i = 0; i < count; i++) {
+    let x, y;
+    do { x = Math.random() * W; y = Math.random() * H; }
+    while (Math.hypot(x - ship.x, y - ship.y) < 260 * DPR);
+    rocks.push(makeRock(x, y, 3));
+  }
+  hud();
+}
+
+/* ---------- ui ---------- */
+const $id = id => document.getElementById(id);
+const pad = n => String(n).padStart(6, '0');
+function hud(){
+  $id('h-score').textContent = pad(S.score);
+  $id('h-wave').textContent = String(S.wave).padStart(2, '0');
+  $id('h-lives').textContent = S.lives > 0 ? '◆ '.repeat(S.lives).trim() : '—';
+  $id('h-best').textContent = pad(Math.max(S.best, S.score));
+}
+function show(id){ ['ov-start','ov-over','ov-pause'].forEach(o => $id(o).classList.toggle('hidden', o !== id)); }
+function hideAll(){ ['ov-start','ov-over','ov-pause'].forEach(o => $id(o).classList.add('hidden')); }
+
+function start(){
+  S.mode = 'play'; S.score = 0; S.wave = 0; S.lives = 3;
+  rocks = []; bullets = []; sparks = [];
+  ship.x = W / 2; ship.y = H / 2; ship.vx = ship.vy = 0; ship.a = -Math.PI/2; ship.inv = 120; ship.dead = 0;
+  hideAll(); spawnWave();
+}
+function pause(){ S.mode = 'pause'; show('ov-pause'); }
+function resume(){ S.mode = 'play'; hideAll(); }
+function gameOver(){
+  S.mode = 'over';
+  S.best = Math.max(S.best, S.score);
+  try { localStorage.setItem('debris-best', String(S.best)); } catch(e){}
+  $id('f-score').textContent = pad(S.score);
+  $id('f-wave').textContent = String(Math.max(0, S.wave - (rocks.length ? 1 : 0))).padStart(2, '0');
+  $id('f-best').textContent = pad(S.best);
+  show('ov-over');
+}
+$id('btn-start').addEventListener('click', start);
+$id('btn-retry').addEventListener('click', start);
+$id('btn-resume').addEventListener('click', resume);
+document.addEventListener('visibilitychange', () => { if (document.hidden && S.mode === 'play') pause(); });
+
+/* ---------- update ---------- */
+function update(){
+  if (S.mode !== 'play') return;
+
+  /* ship */
+  if (ship.dead > 0) {
+    ship.dead--;
+    if (ship.dead === 0) {
+      if (S.lives <= 0) { gameOver(); return; }
+      ship.x = W / 2; ship.y = H / 2; ship.vx = ship.vy = 0; ship.a = -Math.PI/2; ship.inv = 140;
+    }
+  } else {
+    const left = keys['arrowleft'] || keys['a'], right = keys['arrowright'] || keys['d'];
+    const thrust = keys['arrowup'] || keys['w'];
+    if (left) ship.a -= .072;
+    if (right) ship.a += .072;
+    ship.thrusting = !!thrust;
+    if (thrust) {
+      ship.vx += Math.cos(ship.a) * .14 * DPR;
+      ship.vy += Math.sin(ship.a) * .14 * DPR;
+    }
+    ship.vx *= .992; ship.vy *= .992;
+    const spd = Math.hypot(ship.vx, ship.vy), max = 7 * DPR;
+    if (spd > max) { ship.vx *= max / spd; ship.vy *= max / spd; }
+    ship.x += ship.vx; ship.y += ship.vy;
+    wrap(ship);
+    if (ship.inv > 0) ship.inv--;
+
+    /* fire */
+    if (keys[' '] && performance.now() - lastShot > 200) {
+      lastShot = performance.now();
+      bullets.push({ x: ship.x + Math.cos(ship.a) * ship.r * DPR, y: ship.y + Math.sin(ship.a) * ship.r * DPR, vx: Math.cos(ship.a) * 10.5 * DPR + ship.vx, vy: Math.sin(ship.a) * 10.5 * DPR + ship.vy, life: 62 });
+    }
+  }
+
+  /* bullets */
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += b.vx; b.y += b.vy; b.life--;
+    wrap(b);
+    if (b.life <= 0) { bullets.splice(i, 1); continue; }
+    for (let j = rocks.length - 1; j >= 0; j--) {
+      const r = rocks[j];
+      if (Math.hypot(b.x - r.x, b.y - r.y) < r.r) {
+        bullets.splice(i, 1);
+        rocks.splice(j, 1);
+        S.score += r.size === 3 ? 20 : r.size === 2 ? 50 : 100;
+        burst(r.x, r.y, r.size * 8, 3.4);
+        if (r.size > 1) for (let k = 0; k < 2; k++) rocks.push(makeRock(r.x, r.y, r.size - 1));
+        hud();
+        break;
+      }
+    }
+  }
+
+  /* rocks */
+  for (const r of rocks) {
+    r.x += r.vx; r.y += r.vy; r.rot += r.vrot;
+    wrap(r);
+    if (ship.dead === 0 && ship.inv === 0 && Math.hypot(ship.x - r.x, ship.y - r.y) < r.r + ship.r * DPR * .72) {
+      S.lives--; ship.dead = 90;
+      burst(ship.x, ship.y, 26, 4.5);
+      hud();
+    }
+  }
+
+  /* sparks */
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.x += s.vx; s.y += s.vy; s.vx *= .965; s.vy *= .965; s.life -= .02;
+    if (s.life <= 0) sparks.splice(i, 1);
+  }
+
+  if (!rocks.length && ship.dead === 0) spawnWave();
+}
+
+/* ---------- draw ---------- */
+function draw(){
+  ctx.clearRect(0, 0, W, H);
+  const ac = ACCENT();
+  const t = performance.now() / 1000;
+
+  /* stars */
+  for (const st of stars) {
+    ctx.globalAlpha = .18 + Math.abs(Math.sin(t + st.tw)) * .22;
+    ctx.fillStyle = ac;
+    ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  /* rocks */
+  ctx.strokeStyle = ac;
+  ctx.lineWidth = 1.1 * DPR;
+  for (const r of rocks) {
+    ctx.save();
+    ctx.translate(r.x, r.y);
+    ctx.rotate(r.rot);
+    ctx.globalAlpha = .85;
+    ctx.beginPath();
+    const n = r.verts.length;
+    for (let i = 0; i <= n; i++) {
+      const a = (i % n) / n * TAU, rad = r.r * r.verts[i % n];
+      i === 0 ? ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad) : ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
+  /* bullets */
+  ctx.fillStyle = ac;
+  for (const b of bullets) {
+    ctx.beginPath(); ctx.arc(b.x, b.y, 2 * DPR, 0, TAU); ctx.fill();
+  }
+
+  /* sparks */
+  for (const s of sparks) {
+    ctx.globalAlpha = s.life * .9;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r * s.life + .3, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  /* ship */
+  if (S.mode === 'play' && ship.dead === 0) {
+    const blink = ship.inv > 0 && Math.floor(ship.inv / 8) % 2 === 0;
+    if (!blink) {
+      ctx.save();
+      ctx.translate(ship.x, ship.y);
+      ctx.rotate(ship.a + Math.PI / 2);
+      const r = ship.r * DPR;
+      ctx.strokeStyle = ac;
+      ctx.lineWidth = 1.4 * DPR;
+      ctx.shadowColor = ac; ctx.shadowBlur = 10 * DPR;
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.lineTo(r * .72, r * .8);
+      ctx.lineTo(0, r * .42);
+      ctx.lineTo(-r * .72, r * .8);
+      ctx.closePath();
+      ctx.stroke();
+      if (ship.thrusting && Math.random() > .3) {
+        ctx.beginPath();
+        ctx.moveTo(-r * .3, r * .62);
+        ctx.lineTo(0, r * (1.15 + Math.random() * .4));
+        ctx.lineTo(r * .3, r * .62);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+}
+
+(function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+})();
+hud();
+})();
+
+</script>
+</body>
+</html>
