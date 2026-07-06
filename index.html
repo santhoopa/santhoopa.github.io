@@ -109,6 +109,12 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   #play-tab b { font-weight: 400; animation: blink 1.6s ease-in-out infinite; }
   @media (max-width: 640px) { #play-tab { display: none; } }
 
+  /* ===== BACK TO TOP ===== */
+  #to-top { position: fixed; right: 18px; bottom: 128px; z-index: 850; width: 44px; height: 44px; display: grid; place-items: center; background: var(--bg-2); border: 1px solid var(--rule-2); color: var(--accent); font-family: var(--mono); font-size: 16px; cursor: pointer; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); opacity: 0; visibility: hidden; transform: translateY(12px); transition: opacity .35s, transform .35s var(--ease), visibility .35s, background .25s, color .25s; }
+  #to-top.show { opacity: 1; visibility: visible; transform: none; }
+  #to-top:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+  #tweaks.on ~ #to-top { display: none; }
+
   /* ===== PROGRESS ===== */
   #progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; z-index: 1500; box-shadow: 0 0 12px var(--accent); }
 
@@ -858,6 +864,8 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   </div>
 </aside>
 
+<button id="to-top" aria-label="Back to top" title="Back to top">↑</button>
+
 <script>
 // Portfolio v2 — content data
 window.PV2 = {
@@ -1194,6 +1202,8 @@ setTimeout(fallbackReveal, 900);
 
 /* ============ SCROLL PROGRESS + PARALLAX ============ */
 const prog = $('#progress');
+const toTop = $('#to-top');
+if (toTop) toTop.addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
 const parallaxEls = $$('[data-parallax]');
 let ticking = false;
 function onScroll(){
@@ -1201,6 +1211,7 @@ function onScroll(){
   requestAnimationFrame(() => {
     const max = document.documentElement.scrollHeight - innerHeight;
     prog.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
+    if (toTop) toTop.classList.toggle('show', scrollY > 600);
     if (!reduced) parallaxEls.forEach(el => {
       const f = parseFloat(el.dataset.parallax);
       el.style.transform = `translateY(${scrollY * f}px)`;
