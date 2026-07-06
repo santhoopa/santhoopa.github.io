@@ -14,7 +14,13 @@ Welcome to the public repository for my personal developer portfolio and interac
   * Simulated bootloader loading sequence (`SANTHOOPA.SYS // BOOT`).
   * Smooth parallax backgrounds and particle collision fields using HTML5 Canvas.
   * Adaptive cursor tracking (magnetic dot and ring tracer) with auto-hiding on mobile.
-* **Interactive Mini-Game**: Includes a built-in retro asteroid-shooter arcade simulation, **`DEBRIS.FIELD // SIM`** (playable directly at `/game.html`).
+  * Interactive **Back to Top** navigation control with responsive scroll-threshold trigger.
+* **Interactive Mini-Game**: A retro asteroid-shooter arcade simulation, **`DEBRIS.FIELD // SIM`** (playable at `/game.html` or via the floating sidebar), that includes:
+  * Realistic **elastic, momentum-conserving rock-vs-rock collisions**.
+  * Custom **vector spaceship rendering** with dual-thruster animations and edge-bounce boundary physics.
+  * Procedurally generated asteroid **craters**.
+  * Standalone **Web Audio API synthesizer** generating real-time retro game SFX (shots, hits, explosions, wave alerts, and active engine hum).
+* **Technical Writing**: Features a showcase of published articles, including insights on **Spec-Driven Development (SDD) with Coding Agents** and deep learning topics.
 * **Telemetry & Chat**: Integrated with Tidio for real-time channels and Umami Cloud for privacy-respecting analytics.
 * **SEO & Knowledge Graph Ready**: Optimised metadata, Open Graph profiles, and JSON-LD structured data schema (Person type) for clean search indexing.
 
