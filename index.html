@@ -170,10 +170,10 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   body.loaded .hud { transform: none; }
   .hud .l, .hud .r { display: flex; align-items: center; gap: 18px; color: var(--ink-3); }
   .hud .r { justify-content: flex-end; }
-  .hud .c { display: flex; gap: 20px; }
+  .hud .c { display: flex; gap: 20px; padding: 7px 18px; border: 1px solid var(--rule-2); background: color-mix(in oklab, var(--accent) 4%, transparent); clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
   .hud .c a { position: relative; padding: 2px 0; color: var(--ink-3); transition: color .2s; white-space: nowrap; }
   .hud .c a:hover, .hud .c a.active { color: var(--accent); }
-  .hud .c a.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: var(--accent); }
+  .hud .c a.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 1px; background: var(--accent); }
   .hud .l > span, .hud .r > span { display: inline-flex; align-items: center; gap: 6px; }
   .hud b { color: var(--ink); font-weight: 500; }
   .hud .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); animation: blink 1.6s ease-in-out infinite; display: inline-block; }
