@@ -36,6 +36,7 @@
   .hud b { color: var(--ink); font-weight: 500; }
   .hud .grp { display: flex; gap: 22px; align-items: center; }
   .hud .val { color: var(--accent); }
+  .hud .grp.stats { padding: 7px 16px; border: 1px solid color-mix(in oklab, var(--accent) 45%, var(--rule-2)); background: color-mix(in oklab, var(--accent) 6%, transparent); clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
   .hud a { color: var(--ink-3); text-decoration: none; transition: color .2s; white-space: nowrap; }
   .hud a:hover { color: var(--accent); }
   .hud .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); display: inline-block; margin-right: 8px; animation: blink 1.6s ease-in-out infinite; }
@@ -55,7 +56,7 @@
   .panel .row span:last-child { color: var(--ink); }
   .panel .row.how { border-bottom: 1px solid var(--rule-2); }
   .panel .row.how span:first-child { color: var(--accent); letter-spacing: .2em; }
-  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border: 1px solid var(--accent); background: var(--accent); color: #000; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; cursor: pointer; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)); transition: background .25s, color .25s; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; padding: 14px 24px; border: 1px solid var(--accent); background: var(--accent); color: #000; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; cursor: pointer; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)); transition: background .25s, color .25s; }
   .btn:hover { background: transparent; color: var(--accent); }
   .btn.ghost { background: transparent; color: var(--ink-2); border-color: var(--rule-2); }
   .btn.ghost:hover { color: var(--accent); border-color: var(--accent); }
@@ -64,8 +65,11 @@
   /* Touch controls */
   #touch { position: fixed; bottom: 0; left: 0; right: 0; z-index: 15; display: none; justify-content: space-between; padding: 0 18px calc(18px + env(safe-area-inset-bottom)); pointer-events: none; }
   #touch .cluster { display: flex; gap: 12px; pointer-events: auto; }
-  #touch button { width: 62px; height: 62px; border-radius: 50%; border: 1px solid var(--rule-2); background: rgba(10,12,20,.7); color: var(--accent); font-size: 20px; font-family: var(--mono); backdrop-filter: blur(6px); touch-action: none; user-select: none; -webkit-user-select: none; }
-  #touch button:active { background: var(--accent); color: #000; }
+  #touch .cluster { display: flex; gap: 14px; pointer-events: auto; align-items: flex-end; }
+  #touch button { width: 66px; height: 66px; border-radius: 18px; border: 1px solid var(--rule-2); background: linear-gradient(180deg, rgba(38,45,61,.85), rgba(10,12,20,.92)); color: var(--ink-2); font-size: 22px; font-family: var(--mono); backdrop-filter: blur(6px); touch-action: none; user-select: none; -webkit-user-select: none; box-shadow: 0 4px 0 rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07); transition: transform .06s; }
+  #touch button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.55); color: var(--accent); border-color: var(--accent); }
+  #touch button.thrust { border-color: color-mix(in oklab, var(--accent) 55%, var(--rule-2)); color: var(--accent); }
+  #touch button.fire { width: 80px; height: 80px; border-radius: 50%; background: var(--accent); color: #000; font-size: 11px; font-weight: 600; letter-spacing: .14em; border-color: var(--accent); box-shadow: 0 4px 0 rgba(0,0,0,.55), 0 0 26px color-mix(in oklab, var(--accent) 35%, transparent); }
   body.touch #touch { display: flex; }
 
   @media (max-width: 640px) {
@@ -86,7 +90,7 @@
     <span><span class="dot"></span>DEBRIS.FIELD // SIM</span>
     <span class="hide-m">SECTOR <b>LK-79.85</b></span>
   </div>
-  <div class="grp">
+  <div class="grp stats">
     <span>SCORE <b class="val" id="h-score">000000</b></span>
     <span>WAVE <b class="val" id="h-wave">01</b></span>
     <span>INTEGRITY <b class="val" id="h-lives">◆ ◆ ◆</b></span>
@@ -104,16 +108,10 @@
     <h1>Clear the field.</h1>
     <p>The particle field drifted too close. Someone has to clean it up.</p>
     <div class="rows">
-      <div class="row how"><span>How to play</span><span></span></div>
-      <div class="row"><span>Objective</span><span>Shoot every rock to clear the wave</span></div>
-      <div class="row"><span>Watch out</span><span>Big rocks split into two smaller ones</span></div>
-      <div class="row"><span>Scoring</span><span>Small rocks are worth more — 100 pts</span></div>
-      <div class="row"><span>Integrity</span><span>3 hits and it's over · ◆ ◆ ◆</span></div>
-      <div class="row how"><span>Controls</span><span></span></div>
-      <div class="row"><span>Rotate</span><span>← → or A D</span></div>
-      <div class="row"><span>Thrust</span><span>↑ or W · ship drifts, edges wrap</span></div>
-      <div class="row"><span>Fire</span><span>SPACE</span></div>
-      <div class="row"><span>Pause</span><span>P or ESC</span></div>
+      <div class="row"><span>Goal</span><span>Shoot all the rocks — don't get hit</span></div>
+      <div class="row"><span>Move</span><span>← → to turn · ↑ to fly forward</span></div>
+      <div class="row"><span>Shoot</span><span>SPACE</span></div>
+      <div class="row"><span>Lives</span><span>◆ ◆ ◆ — three hits and it's over</span></div>
     </div>
     <div class="btn-row">
       <button class="btn" id="btn-start" data-umami-event="Game Started">Launch ▸</button>
@@ -153,12 +151,12 @@
 
 <div id="touch">
   <div class="cluster">
-    <button id="t-left" aria-label="Rotate left">⟲</button>
-    <button id="t-right" aria-label="Rotate right">⟳</button>
+    <button id="t-left" aria-label="Rotate left">◀</button>
+    <button id="t-right" aria-label="Rotate right">▶</button>
   </div>
   <div class="cluster">
-    <button id="t-thrust" aria-label="Thrust">▲</button>
-    <button id="t-fire" aria-label="Fire">●</button>
+    <button id="t-thrust" class="thrust" aria-label="Thrust">▲</button>
+    <button id="t-fire" class="fire" aria-label="Fire">FIRE</button>
   </div>
 </div>
 
@@ -308,11 +306,11 @@ function update(){
     if (right) ship.a += .072;
     ship.thrusting = !!thrust;
     if (thrust) {
-      ship.vx += Math.cos(ship.a) * .14 * DPR;
-      ship.vy += Math.sin(ship.a) * .14 * DPR;
+      ship.vx += Math.cos(ship.a) * .05 * DPR;
+      ship.vy += Math.sin(ship.a) * .05 * DPR;
     }
-    ship.vx *= .992; ship.vy *= .992;
-    const spd = Math.hypot(ship.vx, ship.vy), max = 7 * DPR;
+    ship.vx *= .99; ship.vy *= .99;
+    const spd = Math.hypot(ship.vx, ship.vy), max = 3.8 * DPR;
     if (spd > max) { ship.vx *= max / spd; ship.vy *= max / spd; }
     ship.x += ship.vx; ship.y += ship.vy;
     wrap(ship);
@@ -329,8 +327,7 @@ function update(){
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     b.x += b.vx; b.y += b.vy; b.life--;
-    wrap(b);
-    if (b.life <= 0) { bullets.splice(i, 1); continue; }
+    if (b.life <= 0 || b.x < -8 || b.x > W + 8 || b.y < -8 || b.y > H + 8) { bullets.splice(i, 1); continue; }
     for (let j = rocks.length - 1; j >= 0; j--) {
       const r = rocks[j];
       if (Math.hypot(b.x - r.x, b.y - r.y) < r.r) {
@@ -353,6 +350,25 @@ function update(){
       S.lives--; ship.dead = 90;
       burst(ship.x, ship.y, 26, 4.5);
       hud();
+    }
+  }
+
+  /* rock vs rock collisions */
+  for (let i = 0; i < rocks.length; i++) {
+    for (let j = i + 1; j < rocks.length; j++) {
+      const a = rocks[i], b = rocks[j];
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), min = (a.r + b.r) * .92;
+      if (d > 0 && d < min) {
+        const nx = dx / d, ny = dy / d, ov = (min - d) / 2;
+        a.x -= nx * ov; a.y -= ny * ov;
+        b.x += nx * ov; b.y += ny * ov;
+        const vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        if (vn < 0) {
+          const ma = a.size, mb = b.size, imp = 2 * vn / (ma + mb);
+          a.vx += imp * mb * nx; a.vy += imp * mb * ny;
+          b.vx -= imp * ma * nx; b.vy -= imp * ma * ny;
+        }
+      }
     }
   }
 
@@ -424,17 +440,29 @@ function draw(){
       ctx.lineWidth = 1.4 * DPR;
       ctx.shadowColor = ac; ctx.shadowBlur = 10 * DPR;
       ctx.beginPath();
-      ctx.moveTo(0, -r);
-      ctx.lineTo(r * .72, r * .8);
-      ctx.lineTo(0, r * .42);
-      ctx.lineTo(-r * .72, r * .8);
+      ctx.moveTo(0, -r * 1.15);
+      ctx.lineTo(r * .34, -r * .15);
+      ctx.lineTo(r * .95, r * .7);
+      ctx.lineTo(r * .55, r * .78);
+      ctx.lineTo(r * .28, r * .5);
+      ctx.lineTo(0, r * .62);
+      ctx.lineTo(-r * .28, r * .5);
+      ctx.lineTo(-r * .55, r * .78);
+      ctx.lineTo(-r * .95, r * .7);
+      ctx.lineTo(-r * .34, -r * .15);
       ctx.closePath();
       ctx.stroke();
-      if (ship.thrusting && Math.random() > .3) {
+      ctx.beginPath();
+      ctx.moveTo(0, -r * .6);
+      ctx.lineTo(r * .15, -r * .05);
+      ctx.lineTo(-r * .15, -r * .05);
+      ctx.closePath();
+      ctx.stroke();
+      if (ship.thrusting && Math.random() > .25) {
         ctx.beginPath();
-        ctx.moveTo(-r * .3, r * .62);
-        ctx.lineTo(0, r * (1.15 + Math.random() * .4));
-        ctx.lineTo(r * .3, r * .62);
+        ctx.moveTo(-r * .22, r * .58);
+        ctx.lineTo(0, r * (1.25 + Math.random() * .45));
+        ctx.lineTo(r * .22, r * .58);
         ctx.stroke();
       }
       ctx.restore();
