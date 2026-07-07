@@ -1244,10 +1244,15 @@ if (!isTouch && !reduced) {
 
 /* ============ NAV ACTIVE ============ */
 const navLinks = $$('.hud .c a');
-const sio = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) navLinks.forEach(a => a.classList.toggle('active', a.dataset.sec === e.target.id)); });
-}, { threshold: 0.25, rootMargin: '-80px 0px -40% 0px' });
-$$('section[id]').forEach(s => sio.observe(s));
+const secEls = $$('section[id]');
+function navActive(){
+  const line = scrollY + innerHeight * .35;
+  let cur = null;
+  for (const s of secEls) if (s.offsetTop <= line) cur = s.id;
+  navLinks.forEach(a => a.classList.toggle('active', a.dataset.sec === cur));
+}
+addEventListener('scroll', navActive, { passive: true });
+navActive();
 
 /* ============ SCRAMBLE HOVER ============ */
 const GLYPHS = '!<>-_\\/[]{}—=+*^?#';
