@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Lab — Santhoopa Jayawardhana</title>
+
+<meta name="description" content="Three machine-learning models running entirely in your browser — semantic search over Santhoopa's portfolio, on-device speech-to-text, and hand-gesture control. No servers, no API keys, nothing leaves your machine." />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://www.santhoopajayawardhana.online/ai-lab.html" />
+<meta name="theme-color" content="#05060A" />
+<link rel="icon" type="image/png" href="favicon.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="AI Lab — Santhoopa Jayawardhana" />
+<meta property="og:description" content="Three ML models running entirely in your browser. No servers. No API keys. Nothing leaves your machine." />
+<meta property="og:url" content="https://www.santhoopajayawardhana.online/ai-lab.html" />
+<meta property="og:image" content="https://www.santhoopajayawardhana.online/og-image.png" />
+
+<script defer src="https://cloud.umami.is/script.js" data-website-id="f50ec3c0-bdfc-4fc1-bf0c-1e9a7f6c98b9"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #05060A;
+    --bg-2: #0A0C14;
+    --bg-3: #10131D;
+    --ink: #E8EEF5;
+    --ink-2: #BEC7D4;
+    --ink-3: #6A7484;
+    --ink-4: #303848;
+    --rule: #1A1F2B;
+    --rule-2: #262D3D;
+    --accent: #6EF5C8;
+    --display: "Space Grotesk", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --serif: "Instrument Serif", serif;
+    --ease: cubic-bezier(.16, 1, .3, 1);
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; }
+  html,body { background: var(--bg); color: var(--ink); font-family: var(--display); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; overflow-x: hidden; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--ink); }
+  ::selection { background: var(--accent); color: #000; }
+
+  /* lab variant: blueprint grid */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      linear-gradient(var(--rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+    background-size: 56px 56px;
+    opacity: .28;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 100%);
+  }
+  .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 60; box-shadow: inset 0 0 220px rgba(0,0,0,.85); }
+
+  /* ===== HUD ===== */
+  .hud { position: fixed; top: 0; left: 0; right: 0; z-index: 900; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 28px; font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); background: color-mix(in oklab, var(--bg) 82%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--rule); }
+  .hud a { color: var(--ink-3); transition: color .2s; }
+  .hud a:hover, .hud a.hot { color: var(--accent); }
+  .hud .c { display: flex; gap: 22px; }
+  .hud b { color: var(--ink-2); font-weight: 500; }
+  @media (max-width: 720px) { .hud .r { display: none; } .hud .c { gap: 14px; } }
+
+  .frame { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+
+  /* ===== HERO ===== */
+  .hero { padding: 150px 0 56px; }
+  .kicker { font-family: var(--mono); font-size: 10px; letter-spacing: .3em; color: var(--accent); text-transform: uppercase; margin-bottom: 22px; }
+  .hero h1 { font-size: clamp(44px, 8vw, 96px); font-weight: 700; letter-spacing: -.03em; line-height: .95; text-transform: uppercase; }
+  .hero h1 em { font-family: var(--serif); font-style: italic; font-weight: 400; text-transform: none; color: var(--accent); letter-spacing: 0; }
+  .hero-sub { max-width: 620px; margin-top: 26px; color: var(--ink-2); font-size: 16px; line-height: 1.7; text-wrap: pretty; }
+  .hero-sub em { font-family: var(--serif); font-style: italic; color: var(--ink); }
+
+  .assure { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .assure span { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); border: 1px dashed var(--rule-2); padding: 8px 14px; display: inline-flex; align-items: center; gap: 8px; }
+  .assure b { color: var(--accent); font-weight: 400; }
+
+  /* ===== LAB GRID ===== */
+  .lab { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 26px 0 90px; }
+  .lab-card { position: relative; grid-column: span 2; background: color-mix(in oklab, var(--bg-2) 88%, transparent); border: 1px solid var(--rule-2); clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); padding: 26px 28px 30px; }
+  @media (min-width: 900px) { .lab-card.half { grid-column: span 1; } }
+  @media (max-width: 899px) { .lab { grid-template-columns: 1fr; } .lab-card { grid-column: span 1; } }
+
+  .lab-card > header { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; border-bottom: 1px solid var(--rule); padding-bottom: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .lab-card .no { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; color: var(--ink-3); }
+  .lab-card h3 { font-size: 24px; font-weight: 600; letter-spacing: -.01em; margin-top: 6px; }
+  .lab-card h3 em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--accent); }
+  .spec { display: flex; gap: 14px; flex-wrap: wrap; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; color: var(--ink-3); text-transform: uppercase; align-items: center; }
+  .st { padding: 4px 10px; border: 1px solid var(--rule-2); color: var(--ink-3); }
+  .st.ok { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 45%, transparent); }
+  .st.busy { color: #FFC66E; border-color: color-mix(in oklab, #FFC66E 45%, transparent); }
+  .st.bad { color: #FF7E79; border-color: color-mix(in oklab, #FF7E79 45%, transparent); }
+
+  .lab-card .about { color: var(--ink-2); font-size: 14.5px; line-height: 1.7; max-width: 640px; text-wrap: pretty; }
+  .lab-card .about .hl { color: var(--ink); border-bottom: 1px dashed var(--accent); }
+
+  /* gate / progress */
+  .gate { display: flex; flex-direction: column; gap: 18px; margin-top: 22px; }
+  .gate-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); background: transparent; border: 1px solid var(--rule-2); cursor: pointer; transition: all .25s var(--ease); }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
+  .btn.primary:hover { background: transparent; color: var(--accent); }
+  .btn:disabled { opacity: .45; pointer-events: none; }
+  .gate .meta { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--ink-3); text-transform: uppercase; }
+  .prog { display: flex; flex-direction: column; gap: 8px; }
+  .prog .bar { height: 3px; background: var(--rule); overflow: hidden; }
+  .prog .bar i { display: block; height: 100%; width: 0%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width .3s; }
+  .prog .bar i.indet { width: 30% !important; animation: indet 1.2s ease-in-out infinite alternate; }
+  @keyframes indet { from { transform: translateX(-40%);} to { transform: translateX(280%);} }
+  .prog .lbl { font-family: var(--mono); font-size: 10px; color: var(--ink-3); letter-spacing: .06em; }
+
+  .err { margin-top: 22px; border: 1px dashed color-mix(in oklab, #FF7E79 50%, transparent); padding: 18px 20px; font-family: var(--mono); font-size: 12px; color: var(--ink-2); line-height: 1.8; }
+  .err b { color: #FF7E79; font-weight: 500; letter-spacing: .12em; }
+  .err .msg { color: var(--ink-3); display: block; }
+
+  /* RAG UI */
+  .rag-io { display: flex; gap: 10px; margin-top: 22px; }
+  .rag-io input { flex: 1; background: var(--bg); border: 1px solid var(--rule-2); color: var(--ink); font-family: var(--mono); font-size: 13px; padding: 13px 16px; outline: none; transition: border-color .2s; }
+  .rag-io input:focus { border-color: var(--accent); }
+  .rag-io input::placeholder { color: var(--ink-4); }
+  #rag-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  #rag-chips button { font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; color: var(--ink-3); background: transparent; border: 1px solid var(--rule); padding: 7px 12px; cursor: pointer; transition: all .2s; }
+  #rag-chips button:hover { color: var(--accent); border-color: var(--accent); }
+  #rag-dims { font-family: var(--mono); font-size: 10px; color: var(--ink-4); letter-spacing: .1em; text-transform: uppercase; margin-top: 12px; }
+  #rag-answer { margin-top: 20px; }
+  .rag-ans { border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent); background: color-mix(in oklab, var(--accent) 5%, var(--bg)); padding: 18px 20px; }
+  .rag-ans.low { border-color: var(--rule-2); background: var(--bg); }
+  .ans-k { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  .rag-ans.low .ans-k { color: #FFC66E; }
+  .ans-tag { color: var(--ink-2); }
+  .ans-text { font-size: 17px; line-height: 1.6; color: var(--ink); }
+  .ans-text.soft { font-size: 13.5px; color: var(--ink-2); }
+  .ans-conf { margin-top: 10px; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+  .ans-conf b { color: var(--accent); font-weight: 400; }
+  #rag-results { margin-top: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .rag-src summary { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase; cursor: pointer; padding: 6px 0; }
+  .rag-src summary:hover { color: var(--accent); }
+  .rag-src .rag-hit { margin-top: 10px; }
+  .thinking { font-family: var(--mono); font-size: 12px; color: var(--ink-3); animation: blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+  .rag-hit { border: 1px solid var(--rule); background: var(--bg); padding: 16px 18px; }
+  .rag-hit.top { border-color: color-mix(in oklab, var(--accent) 40%, transparent); }
+  .hit-meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; margin-bottom: 8px; }
+  .hit-tag { color: var(--accent); }
+  .hit-score { color: var(--ink-3); }
+  .hit-bar { height: 2px; background: var(--rule); margin-bottom: 12px; }
+  .hit-bar i { display: block; height: 100%; background: var(--accent); }
+  .hit-text { color: var(--ink-2); font-size: 13.5px; line-height: 1.7; }
+
+  /* ASR UI */
+  .asr-row { display: flex; align-items: center; gap: 18px; margin-top: 22px; flex-wrap: wrap; }
+  #asr-rec.recording { background: #FF7E79; border-color: #FF7E79; color: #000; animation: recPulse 1.4s ease-in-out infinite; }
+  @keyframes recPulse { 50% { box-shadow: 0 0 22px color-mix(in oklab, #FF7E79 55%, transparent); } }
+  #asr-timer { font-family: var(--mono); font-size: 12px; color: var(--ink-3); min-width: 90px; }
+  #asr-vu { background: var(--bg); border: 1px solid var(--rule); }
+  #asr-out { margin-top: 18px; min-height: 84px; background: var(--bg); border: 1px solid var(--rule); padding: 16px 18px; font-family: var(--mono); font-size: 13px; line-height: 1.8; color: var(--ink-2); white-space: pre-wrap; }
+  #asr-meta { margin-top: 10px; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); }
+
+  /* Gesture UI */
+  .ges-row { display: flex; align-items: center; gap: 16px; margin-top: 22px; flex-wrap: wrap; }
+  #ges-stage { position: relative; margin-top: 18px; background: var(--bg); border: 1px solid var(--rule); aspect-ratio: 4 / 3; overflow: hidden; display: grid; place-items: center; }
+  #ges-stage::after { content: "camera off"; position: absolute; font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-4); }
+  #ges-stage.live::after { display: none; }
+  #ges-video, #ges-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  #ges-label { margin-top: 14px; font-family: var(--mono); font-size: 13px; color: var(--ink); }
+  #ges-count { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--mono); font-size: 96px; font-weight: 600; color: var(--accent); text-shadow: 0 0 40px var(--accent); background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 2; }
+  #ges-count.on { opacity: 1; }
+  .ges-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .ges-strip span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-4); border: 1px solid var(--rule); padding: 6px 10px; transition: all .15s; }
+  .ges-strip span.on { color: var(--accent); border-color: var(--accent); background: color-mix(in oklab, var(--accent) 8%, transparent); }
+  .rps { margin-top: 18px; border: 1px solid var(--rule); background: var(--bg); padding: 16px 18px; }
+  .rps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); }
+  .rps-board { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 18px; margin-top: 16px; }
+  .rps-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .rps-side b { font-size: 40px; line-height: 1; font-weight: 400; min-width: 52px; text-align: center; }
+  .rps-side span { font-family: var(--mono); font-size: 9px; letter-spacing: .2em; color: var(--ink-4); }
+  .rps-mid { font-family: var(--mono); font-size: 12px; color: var(--ink-2); text-align: center; line-height: 1.7; }
+  .rps-score { margin-top: 14px; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .2em; color: var(--accent); border-top: 1px dashed var(--rule); padding-top: 12px; }
+
+  /* footer */
+  footer { position: relative; z-index: 1; border-top: 1px solid var(--rule); padding: 26px 28px; display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); }
+  footer a { color: var(--ink-3); } footer a:hover { color: var(--accent); }
+
+  .note { font-family: var(--mono); font-size: 10.5px; color: var(--ink-4); letter-spacing: .06em; line-height: 1.8; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<div class="vignette"></div>
+
+<header class="hud">
+  <div class="l"><a href="index.html"><b>SANTHOOPA.J</b></a> / AI LAB</div>
+  <nav class="c">
+    <a href="index.html">← Index</a>
+    <a href="#demo-rag">E/01 Recall</a>
+    <a href="#demo-asr">E/02 Whisper</a>
+    <a href="#demo-ges">E/03 Gesture</a>
+  </nav>
+  <div class="r">RUNTIME <b>BROWSER · WASM</b> · COST <b>$0.00</b></div>
+</header>
+
+<main class="frame">
+
+<section class="hero" data-screen-label="AI Lab Hero">
+  <div class="kicker">PORTFOLIO / AI LAB / INDEX 09</div>
+  <h1>MODELS THAT RUN <em>in your browser.</em></h1>
+  <p class="hero-sub">
+    Three small neural networks — downloaded once, cached, and executed <em>entirely on your device</em> via WebAssembly. No servers, no API keys, no tokens burned. Nothing you type, say, or show to the camera ever leaves this tab.
+  </p>
+  <div class="assure">
+    <span><b>◆</b> 100% on-device inference</span>
+    <span><b>◆</b> zero data leaves the tab</span>
+    <span><b>◆</b> models cached after first load</span>
+    <span><b>◆</b> $0.00 per request</span>
+  </div>
+</section>
+
+<section class="lab">
+
+  <!-- ============ E/01 SEMANTIC RECALL ============ -->
+  <article class="lab-card" id="demo-rag" data-screen-label="Semantic Recall">
+    <header>
+      <div>
+        <div class="no">EXPERIMENT E/01 — RETRIEVAL</div>
+        <h3>Semantic <em>recall.</em></h3>
+      </div>
+      <div class="spec">
+        <span>MiniLM retriever + DistilBERT reader · ~88 MB</span>
+        <span class="st" id="rag-st">IDLE</span>
+      </div>
+    </header>
+    <p class="about">
+      A miniature version of the <span class="hl">RAG systems</span> I build in production — retrieve, then read. My portfolio is chunked and embedded into 384-dimensional vectors; your question is matched by <span class="hl">cosine similarity</span>, then an extractive <span class="hl">reader model</span> pulls the exact answer span out of the retrieved text. It can only quote what's really here — zero hallucination by design.
+    </p>
+
+    <div class="gate" id="rag-gate">
+      <div class="gate-row">
+        <button class="btn primary" id="rag-init" data-umami-event="Lab RAG Init"><span>▸ Initialize model</span></button>
+        <span class="meta">~88 MB download (2 models) · cached after first run</span>
+      </div>
+      <div class="prog" id="rag-prog" hidden><div class="bar"><i></i></div><span class="lbl">…</span></div>
+    </div>
+
+    <div id="rag-body" hidden>
+      <div class="rag-io">
+        <input id="rag-q" type="text" placeholder="ask about my work — e.g. 'has he worked with kafka?'" autocomplete="off" />
+        <button class="btn primary" id="rag-ask"><span>Query ▸</span></button>
+      </div>
+      <div id="rag-chips">
+        <button>What agentic AI work has Santhoopa done?</button>
+        <button>What payment platforms has he integrated?</button>
+        <button>Where was his traffic research published?</button>
+        <button>What is his current role?</button>
+        <button>What did he build for telecom?</button>
+      </div>
+      <div id="rag-dims"></div>
+      <div id="rag-answer"></div>
+      <div id="rag-results"></div>
+    </div>
+
+    <div class="err" id="rag-err" hidden>
+      <b>// MODEL FAILED TO LOAD</b><br>
+      <span class="msg"></span>
+      Your browser or network may not support in-browser inference. Try a recent Chrome, Edge or Firefox — or <a href="index.html">return to the index</a>.
+    </div>
+  </article>
+
+  <!-- ============ E/02 WHISPER ============ -->
+  <article class="lab-card half" id="demo-asr" data-screen-label="Whisper Speech-to-Text">
+    <header>
+      <div>
+        <div class="no">EXPERIMENT E/02 — SPEECH</div>
+        <h3>Whisper, <em>tiny.</em></h3>
+      </div>
+      <div class="spec">
+        <span>whisper-tiny.en · ~41 MB</span>
+        <span class="st" id="asr-st">IDLE</span>
+      </div>
+    </header>
+    <p class="about">
+      OpenAI's smallest Whisper model, quantized and compiled to <span class="hl">WebAssembly</span>. Speak into your mic; audio is resampled to 16 kHz and transcribed on your CPU. The recording never touches a network.
+    </p>
+
+    <div class="gate" id="asr-gate">
+      <div class="gate-row">
+        <button class="btn primary" id="asr-init" data-umami-event="Lab Whisper Init"><span>▸ Initialize model</span></button>
+        <span class="meta">~41 MB download · cached after first run</span>
+      </div>
+      <div class="prog" id="asr-prog" hidden><div class="bar"><i></i></div><span class="lbl">…</span></div>
+    </div>
+
+    <div id="asr-body" hidden>
+      <div class="asr-row">
+        <button class="btn primary" id="asr-rec"><span>Record</span></button>
+        <span id="asr-timer">0.0s / 30s</span>
+        <canvas id="asr-vu" width="200" height="34"></canvas>
+      </div>
+      <div id="asr-out">Press record, say something, press stop.</div>
+      <div id="asr-meta"></div>
+      <p class="note">English-only model. Needs microphone permission — audio is processed in-memory and discarded.</p>
+    </div>
+
+    <div class="err" id="asr-err" hidden>
+      <b>// MODEL FAILED TO LOAD</b><br>
+      <span class="msg"></span>
+      Your browser or network may not support in-browser inference. Try a recent Chrome, Edge or Firefox — or <a href="index.html">return to the index</a>.
+    </div>
+  </article>
+
+  <!-- ============ E/03 GESTURE ============ -->
+  <article class="lab-card half" id="demo-ges" data-screen-label="Gesture Control">
+    <header>
+      <div>
+        <div class="no">EXPERIMENT E/03 — VISION</div>
+        <h3>Gesture <em>link.</em></h3>
+      </div>
+      <div class="spec">
+        <span>MediaPipe · ~8 MB</span>
+        <span class="st" id="ges-st">IDLE</span>
+      </div>
+    </header>
+    <p class="about">
+      Real-time <span class="hl">hand-landmark tracking</span> and gesture classification on your webcam feed — 21 keypoints per hand, every frame, on-device. Then put it to work: play <span class="hl">rock · paper · scissors</span> against the model.
+    </p>
+
+    <div class="gate" id="ges-gate">
+      <div class="gate-row">
+        <button class="btn primary" id="ges-init" data-umami-event="Lab Gesture Init"><span>▸ Initialize model</span></button>
+        <span class="meta">~8 MB download · cached after first run</span>
+      </div>
+      <div class="prog" id="ges-prog" hidden><div class="bar"><i></i></div><span class="lbl">…</span></div>
+    </div>
+
+    <div id="ges-body" hidden>
+      <div class="ges-row">
+        <button class="btn primary" id="ges-cam"><span>Start camera</span></button>
+      </div>
+      <div id="ges-stage">
+        <video id="ges-video" playsinline muted></video>
+        <canvas id="ges-canvas"></canvas>
+        <div id="ges-count"></div>
+      </div>
+      <div id="ges-label">— camera off —</div>
+      <div class="ges-strip" id="ges-strip">
+        <span data-g="Closed_Fist">✊ fist</span>
+        <span data-g="Open_Palm">✋ palm</span>
+        <span data-g="Pointing_Up">☝ point</span>
+        <span data-g="Thumb_Up">👍 up</span>
+        <span data-g="Thumb_Down">👎 down</span>
+        <span data-g="Victory">✌ victory</span>
+        <span data-g="ILoveYou">🤟 ily</span>
+      </div>
+      <div class="rps">
+        <div class="rps-head">
+          <span>// ROCK · PAPER · SCISSORS</span>
+          <button class="btn" id="rps-play" data-umami-event="Lab RPS Play"><span>Play round ▸</span></button>
+        </div>
+        <div class="rps-board">
+          <div class="rps-side"><b id="rps-you">—</b><span>YOU</span></div>
+          <div class="rps-mid" id="rps-result">show ✊ ✋ or ✌ when the countdown hits zero</div>
+          <div class="rps-side"><b id="rps-bot">—</b><span>MODEL</span></div>
+        </div>
+        <div class="rps-score" id="rps-score">YOU 0 — 0 MODEL</div>
+      </div>
+      <p class="note">Needs camera permission — frames are processed in-memory and discarded.</p>
+    </div>
+
+    <div class="err" id="ges-err" hidden>
+      <b>// MODEL FAILED TO LOAD</b><br>
+      <span class="msg"></span>
+      Your browser or network may not support in-browser inference. Try a recent Chrome, Edge or Firefox — or <a href="index.html">return to the index</a>.
+    </div>
+  </article>
+
+</section>
+
+</main>
+
+<footer>
+  <div class="l"><a href="index.html">← BACK TO INDEX</a></div>
+  <div class="c">EMBEDDINGS · SPEECH · VISION — ALL LOCAL</div>
+  <div class="r">BUILT IN COLOMBO ◆ 2026</div>
+</footer>
+
+<script src="ai-lab-corpus.js"></script>
+<script src="ai-lab-demos.js"></script>
+
+</body>
+</html>
