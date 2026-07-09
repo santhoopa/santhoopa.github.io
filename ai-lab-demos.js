@@ -704,4 +704,134 @@ function labScramble(el) {
 if (!matchMedia('(hover: none)').matches) {
   $$('.scr').forEach(el => el.addEventListener('mouseenter', () => labScramble(el)));
 }
+
+/* ================================================================
+   Accordion — only one initialized experiment open at a time.
+   Collapsing a card stops its camera/mic (phones slow down with
+   several live streams).
+   ================================================================ */
+window.__labStops = Object.assign(window.__labStops || {}, {
+  ges: () => { if (gesStream) stopCam(); },
+  det: () => { if (detStream) stopDetCam(); },
+  face: () => { if (faceStream) stopFaceCam(); },
+  asr: () => { if (mediaRec && mediaRec.state === 'recording') mediaRec.stop(); }
+});
+const LAB_PREFIX = { 'demo-ges': 'ges', 'demo-det': 'det', 'demo-face': 'face', 'demo-cartoon': 'cart', 'demo-rep': 'rep', 'demo-pup': 'pup', 'demo-asr': 'asr' };
+const labCards = $$('.lab-card');
+function cardOpened(c) {
+  const body = c.querySelector('[id$="-body"]'), err = c.querySelector('.err');
+  return (body && !body.hidden) || (err && !err.hidden);
+}
+function collapseCard(c) {
+  if (c.classList.contains('collapsed') || !cardOpened(c)) return;
+  const stop = window.__labStops[LAB_PREFIX[c.id]];
+  if (stop) { try { stop(); } catch (_) {} }
+  c.classList.add('collapsed');
+}
+function activateCard(c) {
+  labCards.forEach(o => { if (o !== c) collapseCard(o); });
+  c.classList.remove('collapsed');
+}
+labCards.forEach(c => {
+  c.addEventListener('click', e => {
+    if (c.classList.contains('collapsed')) { activateCard(c); return; }
+    if (e.target.closest('button, .cart-drop, input')) activateCard(c);
+  });
+});
+
+/* ================================================================
+   Starfield — subtle drifting/twinkling stars behind the grid
+   ================================================================ */
+(function () {
+  const cv = document.getElementById('lab-stars');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  let stars = [], W = 0, H = 0;
+  function resize() {
+    W = cv.width = innerWidth;
+    H = cv.height = innerHeight;
+    stars = Array.from({ length: Math.min(90, Math.floor(innerWidth / 14)) }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 1.5 + 0.4,
+      tw: Math.random() * Math.PI * 2,
+      sp: 0.02 + Math.random() * 0.06
+    }));
+  }
+  resize();
+  addEventListener('resize', resize);
+  function drawStars(animate) {
+    ctx.clearRect(0, 0, W, H);
+    for (const s of stars) {
+      if (animate) {
+        s.y += s.sp;
+        if (s.y > H) { s.y = -2; s.x = Math.random() * W; }
+        s.tw += 0.025;
+      }
+      ctx.globalAlpha = animate ? 0.2 + 0.5 * Math.abs(Math.sin(s.tw)) : 0.4;
+      ctx.fillStyle = '#BEC7D4';
+      ctx.fillRect(s.x, s.y, s.r, s.r);
+    }
+    ctx.globalAlpha = 1;
+  }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { drawStars(false); return; }
+  (function loop() { requestAnimationFrame(loop); drawStars(true); })();
+})();
+
+/* ================================================================
+   Hero — geodesic sphere: neurons on a rotating globe, firing
+   ================================================================ */
+(function () {
+  const cv = document.getElementById('hero-net');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const DPR = Math.min(devicePixelRatio || 1, 2);
+  const SZ = 360;
+  cv.width = SZ * DPR; cv.height = SZ * DPR;
+  ctx.scale(DPR, DPR);
+
+  const accent = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6EF5C8';
+  const N = 90, pts = [];
+  const ga = Math.PI * (3 - Math.sqrt(5)); /* golden-angle fibonacci sphere */
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = ga * i;
+    pts.push({ x: Math.cos(th) * r, y, z: Math.sin(th) * r, glow: 0 });
+  }
+  /* link each neuron to its 3 nearest neighbors */
+  const links = [];
+  for (let i = 0; i < N; i++) {
+    const ds = pts.map((p, j) => ({ j, d: Math.hypot(p.x - pts[i].x, p.y - pts[i].y, p.z - pts[i].z) }))
+      .sort((a, b) => a.d - b.d).slice(1, 4);
+    for (const { j } of ds) if (i < j) links.push([i, j]);
+  }
+  let ang = 0;
+  function draw(animate) {
+    if (animate) {
+      ang += 0.0018;
+      if (Math.random() < 0.035) pts[Math.floor(Math.random() * N)].glow = 1;
+    }
+    ctx.clearRect(0, 0, SZ, SZ);
+    const ac = accent();
+    const sin = Math.sin(ang), cos = Math.cos(ang);
+    const pr = pts.map(p => {
+      const x = p.x * cos - p.z * sin, z = p.x * sin + p.z * cos, f = 2.9 / (2.9 + z);
+      return { sx: SZ / 2 + x * 118 * f, sy: SZ / 2 + p.y * 118 * f, f };
+    });
+    ctx.lineWidth = 0.7;
+    for (const [a, b] of links) {
+      ctx.globalAlpha = 0.1 + 0.14 * Math.min(pr[a].f, pr[b].f);
+      ctx.strokeStyle = ac;
+      ctx.beginPath(); ctx.moveTo(pr[a].sx, pr[a].sy); ctx.lineTo(pr[b].sx, pr[b].sy); ctx.stroke();
+    }
+    pts.forEach((p, i) => {
+      if (animate) p.glow *= 0.97;
+      const q = pr[i], r = 1.6 + 1.6 * q.f * q.f + p.glow * 2.5;
+      ctx.globalAlpha = Math.min(1, 0.3 + 0.5 * Math.max(0, q.f - 0.6) * 2 + p.glow);
+      ctx.fillStyle = p.glow > 0.35 ? '#ffffff' : ac;
+      ctx.beginPath(); ctx.arc(q.sx, q.sy, r, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { ang = 0.5; draw(false); return; }
+  (function loop() { requestAnimationFrame(loop); draw(true); })();
+})();
 })();

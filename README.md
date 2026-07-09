@@ -20,6 +20,10 @@ Welcome to the public repository for my personal developer portfolio and interac
   * Custom **vector spaceship rendering** with dual-thruster animations and edge-bounce boundary physics.
   * Procedurally generated asteroid **craters**.
   * Standalone **Web Audio API synthesizer** generating real-time retro game SFX (shots, hits, explosions, wave alerts, and active engine hum).
+* **On-Device AI Lab**: A dedicated `/ai-lab.html` environment showcasing 7 live machine learning models running 100% locally in the browser via WebAssembly (no servers, no API keys). Features include:
+  * **MediaPipe Vision**: Hand tracking (Gesture Link), Pose Estimation (Rep Counter), and Face Landmarker (Puppet Face) and Object Detection.
+  * **Transformers.js**: OpenAI Whisper Tiny for local Speech-to-Text.
+  * **TensorFlow.js**: White-box CartoonGAN (Generative AI filter) and face-api.js (Age, Gender, Expression recognition).
 * **Technical Writing**: Features a showcase of published articles, including insights on **Spec-Driven Development (SDD) with Coding Agents** and deep learning topics.
 * **Telemetry & Chat**: Integrated with Tidio for real-time channels and Umami Cloud for privacy-respecting analytics.
 * **SEO & Knowledge Graph Ready**: Optimised metadata, Open Graph profiles, and JSON-LD structured data schema (Person type) for clean search indexing.
@@ -39,7 +43,11 @@ Welcome to the public repository for my personal developer portfolio and interac
 ```
 ├── CNAME                      # Custom domain configuration
 ├── README.md                  # Project documentation
+├── AI-LAB-DOCUMENTATION.md    # Detailed technical documentation for ML models
 ├── index.html                 # Main portfolio page (HUD, sections, scripts)
+├── ai-lab.html                # On-device AI/ML experiments playground
+├── ai-lab-demos.js            # Core logic for Transformers/TF.js models
+├── ai-lab-pose-face.js        # Core logic for MediaPipe Pose/Face tracking
 ├── game.html                  # DEBRIS.FIELD // SIM (Asteroids arcade clone)
 ├── favicon.png                # Standard page icon
 ├── apple-touch-icon.png       # iOS home-screen icon
