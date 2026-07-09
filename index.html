@@ -355,6 +355,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 
   .papers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .playground-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .blog-card h4 { font-size: 19px; }
   .blog-more { margin-top: 24px; }
   .paper .tag { font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
@@ -429,7 +430,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     .work-row .stack, .work-row .year { display: none; }
     .work-detail-inner { grid-template-columns: 1fr; padding-left: 0; gap: 16px; }
     .xp-item { grid-template-columns: 1fr; gap: 10px; }
-    .papers-grid, .svc-grid, .edu-grid, .skills-grid, .blog-grid { grid-template-columns: 1fr; }
+    .papers-grid, .svc-grid, .edu-grid, .skills-grid, .blog-grid, .playground-grid { grid-template-columns: 1fr; }
     .hud .c { display: none; }
     .hud { grid-template-columns: 1fr auto; }
     .hero { grid-template-columns: 1fr; min-height: 0; }
@@ -481,7 +482,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 <div class="orb b" data-parallax="-0.05"></div>
 <div class="vignette"></div>
 <div id="progress"></div>
-<a id="play-tab" href="game.html" data-umami-event="Game Opened"><b>▸</b> Play · debris.field</a>
+<a id="play-tab" href="ai-lab.html" data-umami-event="AI Lab Opened"><b>◆</b> AI Lab</a>
 <div id="cur-ring"></div>
 <div id="cur-dot"></div>
 
@@ -498,7 +499,8 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     <a href="#research" data-sec="research" class="scr">05 · Research</a>
     <a href="#blog" data-sec="blog" class="scr">06 · Blog</a>
     <a href="#services" data-sec="services" class="scr">07 · Work With Me</a>
-    <a href="#contact" data-sec="contact" class="scr">08 · Contact</a>
+    <a href="#playground" data-sec="playground" class="scr">08 · Playground</a>
+    <a href="#contact" data-sec="contact" class="scr">09 · Contact</a>
   </nav>
   <div class="r">
     <span>SYS <b>v2.7.0</b></span>
@@ -809,9 +811,31 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   </div>
 </section>
 
+<!-- ============ PLAYGROUND ============ -->
+<section class="section" id="playground" data-screen-label="Playground">
+  <div class="ghost" data-anim="fade-up">09<small>Playground</small></div>
+  <div>
+    <h2 class="section-title" data-split="words">Side <em>experiments</em>, built for fun.</h2>
+    <div class="playground-grid">
+      <a class="card paper tilt blog-card" href="ai-lab.html" data-anim="fade-up" data-umami-event="Playground AI Lab Clicked">
+        <span class="tag">AI / ML · RUNS IN-BROWSER</span>
+        <h4>AI Lab — 5 live experiments</h4>
+        <p class="desc">Gesture control, object detection, face reading, cartoonization and speech recognition — small models running entirely on your device. No servers, no tokens.</p>
+        <span class="venue">5 EXPERIMENTS · $0.00/REQUEST · OPEN ↗</span>
+      </a>
+      <a class="card paper tilt blog-card" href="game.html" data-anim="fade-up" data-delay="130" data-umami-event="Playground Game Clicked">
+        <span class="tag">GAME · WEBGL</span>
+        <h4>debris.field</h4>
+        <p class="desc">A short arcade break between sections — dodge, shoot, and survive as long as you can.</p>
+        <span class="venue">1 LEVEL · NO INSTALL · PLAY ↗</span>
+      </a>
+    </div>
+  </div>
+</section>
+
 <!-- ============ CONTACT ============ -->
 <section class="contact" id="contact" data-screen-label="Contact">
-  <div class="k" data-anim="fade-up">// 09 · CONTACT — OPEN CHANNEL</div>
+  <div class="k" data-anim="fade-up">// 10 · CONTACT — OPEN CHANNEL</div>
   <h2><span data-split="chars">Open a</span> <em data-anim="fade-up" data-delay="400">channel</em><span class="cursor-blink"></span></h2>
   <div class="links" data-anim="fade-up" data-delay="300">
     <a class="btn magnet" href="https://www.linkedin.com/in/santhoopa-jayawardhana-baa058132" target="_blank" rel="noopener" data-umami-event="LinkedIn Link Clicked"><span>LinkedIn</span> <span>↗</span></a>
@@ -831,6 +855,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     <a href="https://github.com/santhoopa" target="_blank" rel="noopener me" data-umami-event="Footer GitHub">GitHub</a>
     <a href="https://www.researchgate.net/profile/Santhoopa-Jayawardhana" target="_blank" rel="noopener me" data-umami-event="Footer ResearchGate">ResearchGate</a>
     <a href="https://medium.com/@santhoopajayawardhana" target="_blank" rel="noopener me" data-umami-event="Footer Medium">Medium</a>
+    <a href="ai-lab.html" data-umami-event="Footer AI Lab">AI Lab</a>
     <a href="game.html" data-umami-event="Footer Game">Play</a>
   </div>
   <div class="r">BUILT IN COLOMBO ◆ 2026</div>

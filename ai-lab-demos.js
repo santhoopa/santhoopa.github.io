@@ -1,4 +1,4 @@
-/* AI Lab — three in-browser ML demos. All models run locally (WASM/WebGPU); nothing leaves the tab. */
+/* AI Lab — in-browser ML demos. All models run locally (WASM/WebGPU); nothing leaves the tab. */
 (function () {
 'use strict';
 const $ = s => document.querySelector(s);
@@ -45,6 +45,20 @@ function fail(u, e) {
   u.errMsg.textContent = (e && e.message) ? String(e.message).slice(0, 160) : 'Unknown error';
   setStatus(u, 'FAILED', 'bad');
 }
+/* classic <script> loader for UMD libs (face-api.js, tfjs), cached by URL */
+const __scriptCache = new Map();
+function loadScript(src) {
+  if (__scriptCache.has(src)) return __scriptCache.get(src);
+  const p = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('failed to load ' + src));
+    document.head.appendChild(s);
+  });
+  __scriptCache.set(src, p);
+  return p;
+}
 /* transformers.js download progress → aggregate bar */
 function tjsProgress(u) {
   const files = new Map();
@@ -64,107 +78,7 @@ function tjsProgress(u) {
 }
 
 /* ================================================================
-   01 · SEMANTIC RECALL — retrieve (MiniLM) → read (DistilBERT-QA)
-   ================================================================ */
-const rag = card('rag');
-let ragPipe = null, qaPipe = null, ragIndex = null;
-
-rag.init.addEventListener('click', async () => {
-  beginLoad(rag);
-  try {
-    const { pipeline } = await loadTJS();
-    const ph = tjsProgress(rag);
-    ragPipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-      dtype: 'q8', progress_callback: ph
-    });
-    qaPipe = await pipeline('question-answering', 'Xenova/distilbert-base-cased-distilled-squad', {
-      dtype: 'q8', progress_callback: ph
-    });
-    rag.lbl.textContent = 'embedding corpus…';
-    rag.bar.style.width = '100%';
-    const texts = window.LAB_CORPUS.map(c => c.text);
-    const out = await ragPipe(texts, { pooling: 'mean', normalize: true });
-    const arr = out.tolist();
-    ragIndex = arr.map((v, i) => ({ vec: v, ...window.LAB_CORPUS[i] }));
-    showBody(rag);
-    $('#rag-dims').textContent = ragIndex.length + ' chunks · 384-dim retriever + extractive reader';
-  } catch (e) { fail(rag, e); }
-});
-
-function cosine(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
-
-async function ragAsk(q) {
-  if (!ragPipe || !qaPipe || !q.trim()) return;
-  const ansEl = $('#rag-answer'), resEl = $('#rag-results');
-  ansEl.innerHTML = '<div class="thinking">embed query → search index → read answer span…</div>';
-  resEl.innerHTML = '';
-  setStatus(rag, 'INFER', 'busy');
-  try {
-    const out = await ragPipe(q, { pooling: 'mean', normalize: true });
-    const qv = out.tolist()[0];
-    const ranked = ragIndex.map(c => ({ ...c, score: cosine(qv, c.vec) }))
-      .sort((a, b) => b.score - a.score).slice(0, 3);
-
-    /* reader: run extractive QA over each retrieved chunk, keep the best span */
-    let best = null;
-    for (const r of ranked) {
-      try {
-        const res = await qaPipe(q, r.text);
-        if (res && res.answer && (!best || res.score > best.score)) best = { answer: res.answer, score: res.score, src: r };
-      } catch (_) {}
-    }
-
-    ansEl.innerHTML = '';
-    const panel = document.createElement('div');
-    if (best && best.score > 0.05) {
-      panel.className = 'rag-ans';
-      panel.innerHTML =
-        '<div class="ans-k">// ANSWER — extracted from [<span class="ans-tag"></span>]</div>' +
-        '<p class="ans-text"></p>' +
-        '<div class="ans-conf">reader confidence <b></b>%</div>';
-      panel.querySelector('.ans-tag').textContent = best.src.tag;
-      panel.querySelector('.ans-text').textContent = best.answer;
-      panel.querySelector('.ans-conf b').textContent = Math.round(best.score * 100);
-    } else {
-      panel.className = 'rag-ans low';
-      panel.innerHTML =
-        '<div class="ans-k">// LOW CONFIDENCE — no clear answer span found</div>' +
-        '<p class="ans-text soft">The reader couldn\'t extract a confident answer. Closest retrieved context is below — try rephrasing as a direct question.</p>';
-    }
-    ansEl.appendChild(panel);
-
-    /* sources, collapsed */
-    const det = document.createElement('details');
-    det.className = 'rag-src';
-    const sum = document.createElement('summary');
-    sum.textContent = '// SOURCES — top ' + ranked.length + ' of ' + ragIndex.length + ' chunks, by cosine similarity';
-    det.appendChild(sum);
-    ranked.forEach((r, i) => {
-      const pct = Math.max(0, Math.round(r.score * 100));
-      const d = document.createElement('div');
-      d.className = 'rag-hit' + (i === 0 ? ' top' : '');
-      d.innerHTML =
-        '<div class="hit-meta"><span class="hit-tag"></span><span class="hit-score">' + r.score.toFixed(3) + '</span></div>' +
-        '<div class="hit-bar"><i style="width:' + pct + '%"></i></div>' +
-        '<p class="hit-text"></p>';
-      d.querySelector('.hit-tag').textContent = '[' + r.tag + ']';
-      d.querySelector('.hit-text').textContent = r.text;
-      det.appendChild(d);
-    });
-    if (best && best.score > 0.05) det.open = false; else det.open = true;
-    resEl.appendChild(det);
-    setStatus(rag, 'READY', 'ok');
-  } catch (e) {
-    ansEl.innerHTML = '<div class="thinking">query failed — try again</div>';
-    setStatus(rag, 'READY', 'ok');
-  }
-}
-$('#rag-ask').addEventListener('click', () => ragAsk($('#rag-q').value));
-$('#rag-q').addEventListener('keydown', e => { if (e.key === 'Enter') ragAsk(e.target.value); });
-$$('#rag-chips button').forEach(b => b.addEventListener('click', () => { $('#rag-q').value = b.textContent; ragAsk(b.textContent); }));
-
-/* ================================================================
-   02 · WHISPER TINY — speech → text
+   01 · WHISPER TINY — speech → text
    ================================================================ */
 const asr = card('asr');
 let asrPipe = null, mediaRec = null, recChunks = [], recTimer = null, recStart = 0, vuRAF = 0;
@@ -251,7 +165,7 @@ recBtn.addEventListener('click', async () => {
 });
 
 /* ================================================================
-   03 · GESTURE LINK — hand tracking + rock·paper·scissors
+   02 · GESTURE LINK — hand tracking + rock·paper·scissors
    ================================================================ */
 const ges = card('ges');
 let recognizer = null, gesStream = null, gesRAF = 0, lastVideoTime = -1, mpMod = null;
@@ -338,9 +252,25 @@ function gesLoop() {
 
 /* ----- rock · paper · scissors ----- */
 const RPS_MAP = { Closed_Fist: 'rock', Open_Palm: 'paper', Victory: 'scissors' };
-const RPS_EMO = { Closed_Fist: '✊', Open_Palm: '✋', Victory: '✌' };
+const RPS_EMO = { Closed_Fist: '✊️', Open_Palm: '✋️', Victory: '✌️' };
 const RPS_BEATS = { Closed_Fist: 'Victory', Victory: 'Open_Palm', Open_Palm: 'Closed_Fist' };
 let rpsScore = { you: 0, bot: 0 }, counting = false;
+
+/* tiny WebAudio beep — no audio files needed */
+let beepCtx = null;
+function beep(freq, dur, type, vol) {
+  try {
+    beepCtx = beepCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const osc = beepCtx.createOscillator(), gain = beepCtx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq || 660;
+    gain.gain.value = vol != null ? vol : 0.05;
+    osc.connect(gain); gain.connect(beepCtx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, beepCtx.currentTime + (dur || 0.09));
+    osc.stop(beepCtx.currentTime + (dur || 0.09) + 0.02);
+  } catch (_) {}
+}
 
 $('#rps-play').addEventListener('click', () => {
   if (counting) return;
@@ -349,13 +279,15 @@ $('#rps-play').addEventListener('click', () => {
   let n = 3;
   const cd = $('#ges-count');
   cd.textContent = n; cd.classList.add('on');
+  beep(660, 0.09, 'square', 0.05);
   $('#rps-result').textContent = 'get your hand ready…';
   const iv = setInterval(() => {
     n--;
-    if (n > 0) { cd.textContent = n; return; }
+    if (n > 0) { cd.textContent = n; beep(660, 0.09, 'square', 0.05); return; }
     clearInterval(iv);
     cd.classList.remove('on');
     counting = false;
+    beep(1046, 0.13, 'square', 0.06);
     resolveRound();
   }, 800);
 });
@@ -364,7 +296,7 @@ function resolveRound() {
   if (!you || !RPS_MAP[you]) {
     $('#rps-you').textContent = '?';
     $('#rps-bot').textContent = '—';
-    $('#rps-result').textContent = 'no valid gesture — show ✊ ✋ or ✌';
+    $('#rps-result').textContent = 'no valid gesture — show ✊️ ✋️ or ✌️';
     return;
   }
   const opts = Object.keys(RPS_MAP);
@@ -372,10 +304,404 @@ function resolveRound() {
   $('#rps-you').textContent = RPS_EMO[you];
   $('#rps-bot').textContent = RPS_EMO[bot];
   let msg;
-  if (you === bot) msg = 'draw — ' + RPS_MAP[you] + ' vs ' + RPS_MAP[bot];
-  else if (RPS_BEATS[you] === bot) { rpsScore.you++; msg = RPS_MAP[you] + ' beats ' + RPS_MAP[bot] + ' — you win'; }
-  else { rpsScore.bot++; msg = RPS_MAP[bot] + ' beats ' + RPS_MAP[you] + ' — model wins'; }
+  if (you === bot) { msg = 'draw — ' + RPS_MAP[you] + ' vs ' + RPS_MAP[bot]; beep(500, 0.14, 'triangle', 0.05); }
+  else if (RPS_BEATS[you] === bot) { rpsScore.you++; msg = RPS_MAP[you] + ' beats ' + RPS_MAP[bot] + ' — you win'; beep(1200, 0.18, 'square', 0.06); }
+  else { rpsScore.bot++; msg = RPS_MAP[bot] + ' beats ' + RPS_MAP[you] + ' — model wins'; beep(180, 0.22, 'sawtooth', 0.06); }
   $('#rps-result').textContent = msg;
   $('#rps-score').textContent = 'YOU ' + rpsScore.you + ' — ' + rpsScore.bot + ' MODEL';
+}
+
+/* ================================================================
+   03 · OBJECT DETECTION — EfficientDet-Lite0 on the webcam
+   ================================================================ */
+const det = card('det');
+let detector = null, detStream = null, detRAF = 0, detLastTime = -1, detListAt = 0;
+let fpsCount = 0, fpsAt = 0;
+
+det.init.addEventListener('click', async () => {
+  beginLoad(det);
+  det.bar.classList.add('indet');
+  det.lbl.textContent = 'downloading detector ~5 MB…';
+  try {
+    mpMod = mpMod || await import(MP);
+    const fs = await mpMod.FilesetResolver.forVisionTasks(MP + '/wasm');
+    const opts = delegate => ({
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite',
+        delegate
+      },
+      runningMode: 'VIDEO', scoreThreshold: 0.45, maxResults: 6
+    });
+    try { detector = await mpMod.ObjectDetector.createFromOptions(fs, opts('GPU')); }
+    catch (_) { detector = await mpMod.ObjectDetector.createFromOptions(fs, opts('CPU')); }
+    det.bar.classList.remove('indet');
+    showBody(det);
+  } catch (e) { fail(det, e); }
+});
+
+const detCamBtn = $('#det-cam');
+detCamBtn.addEventListener('click', async () => {
+  if (detStream) { stopDetCam(); return; }
+  try {
+    detStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+    const video = $('#det-video');
+    video.srcObject = detStream;
+    await video.play();
+    const cv = $('#det-canvas');
+    cv.width = video.videoWidth; cv.height = video.videoHeight;
+    detCamBtn.querySelector('span').textContent = 'Stop camera';
+    $('#det-stage').classList.add('live');
+    setStatus(det, 'LIVE ●', 'ok');
+    detLoop();
+  } catch (e) {
+    $('#det-list').innerHTML = '<div class="det-none">camera unavailable — ' + e.message + '</div>';
+  }
+});
+function stopDetCam() {
+  cancelAnimationFrame(detRAF);
+  if (detStream) detStream.getTracks().forEach(t => t.stop());
+  detStream = null;
+  $('#det-stage').classList.remove('live');
+  detCamBtn.querySelector('span').textContent = 'Start camera';
+  $('#det-list').innerHTML = '<div class="det-none">— camera off —</div>';
+  $('#det-fps').textContent = '';
+  setStatus(det, 'READY', 'ok');
+}
+function detLoop() {
+  const video = $('#det-video'), cv = $('#det-canvas'), ctx = cv.getContext('2d');
+  (function loop() {
+    detRAF = requestAnimationFrame(loop);
+    if (!detStream || video.readyState < 2) return;
+    if (video.currentTime === detLastTime) return;
+    detLastTime = video.currentTime;
+    const res = detector.detectForVideo(video, performance.now());
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.font = '600 13px "JetBrains Mono", monospace';
+    ctx.lineWidth = 2;
+    const dets = res.detections || [];
+    for (const d of dets) {
+      const b = d.boundingBox, c = d.categories[0];
+      ctx.strokeStyle = accent;
+      ctx.strokeRect(b.originX, b.originY, b.width, b.height);
+      const label = c.categoryName + ' ' + Math.round(c.score * 100) + '%';
+      const tw = ctx.measureText(label).width + 12;
+      const ly = Math.max(0, b.originY - 20);
+      ctx.fillStyle = accent;
+      ctx.fillRect(b.originX - 1, ly, tw, 20);
+      ctx.fillStyle = '#000';
+      ctx.fillText(label, b.originX + 5, ly + 14);
+    }
+    /* fps */
+    fpsCount++;
+    const now = performance.now();
+    if (now - fpsAt > 1000) {
+      $('#det-fps').textContent = fpsCount + ' fps · on-device';
+      fpsCount = 0; fpsAt = now;
+    }
+    /* side list, throttled */
+    if (now - detListAt > 180) {
+      detListAt = now;
+      const listEl = $('#det-list');
+      if (!dets.length) {
+        listEl.innerHTML = '<div class="det-none">nothing detected — point the camera at objects</div>';
+      } else {
+        const agg = new Map();
+        for (const d of dets) {
+          const c = d.categories[0];
+          const e = agg.get(c.categoryName) || { n: 0, s: 0 };
+          e.n++; e.s = Math.max(e.s, c.score);
+          agg.set(c.categoryName, e);
+        }
+        listEl.innerHTML = '';
+        [...agg.entries()].sort((a, b) => b[1].s - a[1].s).forEach(([name, e]) => {
+          const row = document.createElement('div');
+          row.className = 'det-row';
+          row.innerHTML =
+            '<div class="det-row-top"><span class="nm"></span><span class="sc">' + (e.n > 1 ? '×' + e.n + ' · ' : '') + Math.round(e.s * 100) + '%</span></div>' +
+            '<div class="hit-bar"><i style="width:' + Math.round(e.s * 100) + '%"></i></div>';
+          row.querySelector('.nm').textContent = name;
+          listEl.appendChild(row);
+        });
+      }
+    }
+  })();
+}
+
+/* ================================================================
+   04 · FACE READER — face-api.js (tiny detector + expression + age/gender)
+   ================================================================ */
+const face = card('face');
+let faceStream = null, faceRAF = 0;
+const FACE_EMOJI = { neutral: '😐', happy: '😄', sad: '😢', angry: '😠', fearful: '😨', disgusted: '🤢', surprised: '😲' };
+
+face.init.addEventListener('click', async () => {
+  beginLoad(face);
+  face.bar.classList.add('indet');
+  face.lbl.textContent = 'loading face-api.js + models ~1.5 MB…';
+  try {
+    await loadScript('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js');
+    const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+      faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL)
+    ]);
+    face.bar.classList.remove('indet');
+    showBody(face);
+  } catch (e) { fail(face, e); }
+});
+
+const faceCamBtn = $('#face-cam');
+faceCamBtn.addEventListener('click', async () => {
+  if (faceStream) { stopFaceCam(); return; }
+  try {
+    faceStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+    const video = $('#face-video');
+    video.srcObject = faceStream;
+    await video.play();
+    const cv = $('#face-canvas');
+    cv.width = video.videoWidth; cv.height = video.videoHeight;
+    faceCamBtn.querySelector('span').textContent = 'Stop camera';
+    $('#face-stage').classList.add('live');
+    setStatus(face, 'LIVE ●', 'ok');
+    faceLoop();
+  } catch (e) {
+    $('#face-readout').innerHTML = '<div class="det-none">camera unavailable — ' + e.message + '</div>';
+  }
+});
+function stopFaceCam() {
+  cancelAnimationFrame(faceRAF);
+  if (faceStream) faceStream.getTracks().forEach(t => t.stop());
+  faceStream = null;
+  $('#face-stage').classList.remove('live');
+  faceCamBtn.querySelector('span').textContent = 'Start camera';
+  $('#face-readout').innerHTML = '<div class="det-none">— camera off —</div>';
+  setStatus(face, 'READY', 'ok');
+}
+function faceLoop() {
+  const video = $('#face-video'), cv = $('#face-canvas'), ctx = cv.getContext('2d');
+  const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+  let busy = false;
+  (function loop() {
+    faceRAF = requestAnimationFrame(loop);
+    if (!faceStream || video.readyState < 2 || busy) return;
+    busy = true;
+    faceapi.detectSingleFace(video, opts).withFaceExpressions().withAgeAndGender()
+      .then(res => {
+        busy = false;
+        if (!faceStream) return;
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        if (!res) {
+          $('#face-readout').innerHTML = '<div class="det-none">show your face to the camera…</div>';
+          return;
+        }
+        const b = res.detection.box;
+        ctx.strokeStyle = accent; ctx.lineWidth = 2;
+        ctx.strokeRect(b.x, b.y, b.width, b.height);
+        const top = Object.entries(res.expressions).sort((a, b) => b[1] - a[1])[0];
+        const emoji = FACE_EMOJI[top[0]] || '🙂';
+        const age = Math.round(res.age);
+        const genderLabel = res.genderProbability > 0.6 ? res.gender : 'uncertain';
+        $('#face-readout').innerHTML =
+          '<div class="face-emoji">' + emoji + '</div>' +
+          '<div class="face-lines">' +
+            '<div class="face-line"><span class="k">expression</span><span class="v">' + top[0] + ' · ' + Math.round(top[1] * 100) + '%</span></div>' +
+            '<div class="face-line"><span class="k">age (est.)</span><span class="v">~' + age + ' yrs</span></div>' +
+            '<div class="face-line"><span class="k">gender (est.)</span><span class="v">' + genderLabel + ' · ' + Math.round(res.genderProbability * 100) + '%</span></div>' +
+          '</div>';
+      })
+      .catch(() => { busy = false; });
+  })();
+}
+
+/* ================================================================
+   05 · CARTOONIZE — White-box CartoonGAN (TensorFlow.js)
+   ================================================================ */
+const cart = card('cart');
+let cartModel = null, cartRetried = false, cartRawImageData = null;
+
+/* posterize + saturation boost + Sobel-edge ink overlay, layered on top of the raw GAN output */
+function cartApplyStrength(strengthPct) {
+  if (!cartRawImageData) return;
+  const s = Math.max(0, Math.min(100, strengthPct)) / 100;
+  const w = cartRawImageData.width, h = cartRawImageData.height;
+  const src = cartRawImageData.data;
+  const lum = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    lum[i] = 0.299 * src[i * 4] + 0.587 * src[i * 4 + 1] + 0.114 * src[i * 4 + 2];
+  }
+  const out = new Uint8ClampedArray(src.length);
+  const levels = Math.max(3, Math.round(10 - s * 6));
+  const step = 255 / (levels - 1);
+  const satMul = 1 + s * 0.9;
+  for (let i = 0; i < w * h; i++) {
+    const p = i * 4;
+    const l = lum[i];
+    let r = l + (src[p] - l) * satMul;
+    let g = l + (src[p + 1] - l) * satMul;
+    let b = l + (src[p + 2] - l) * satMul;
+    r = Math.round(Math.round(r / step) * step);
+    g = Math.round(Math.round(g / step) * step);
+    b = Math.round(Math.round(b / step) * step);
+    out[p] = r; out[p + 1] = g; out[p + 2] = b; out[p + 3] = 255;
+  }
+  if (s > 0.04) {
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const idx = y * w + x;
+        const gx = -lum[idx - w - 1] - 2 * lum[idx - 1] - lum[idx + w - 1] + lum[idx - w + 1] + 2 * lum[idx + 1] + lum[idx + w + 1];
+        const gy = -lum[idx - w - 1] - 2 * lum[idx - w] - lum[idx - w + 1] + lum[idx + w - 1] + 2 * lum[idx + w] + lum[idx + w + 1];
+        const mag = Math.sqrt(gx * gx + gy * gy);
+        if (mag > 90) {
+          const darken = Math.min(1, (mag - 90) / 120) * s;
+          const p = idx * 4;
+          out[p] *= (1 - darken); out[p + 1] *= (1 - darken); out[p + 2] *= (1 - darken);
+        }
+      }
+    }
+  }
+  const cv = $('#cart-canvas');
+  cv.getContext('2d').putImageData(new ImageData(out, w, h), 0, 0);
+  $('#cart-dl').href = cv.toDataURL('image/jpeg', 0.92);
+}
+$('#cart-strength').addEventListener('input', e => {
+  $('#cart-strength-val').textContent = e.target.value + '%';
+  cartApplyStrength(+e.target.value);
+});
+
+cart.init.addEventListener('click', async () => {
+  beginLoad(cart);
+  cart.bar.classList.add('indet');
+  cart.lbl.textContent = 'loading TensorFlow.js + model ~1.5 MB…';
+  try {
+    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
+    // Prefer WASM: the model's op mix (dynamic Fill/resize + depthwise ops) is the
+    // combination the upstream demo itself ships on WASM — some WebGL drivers choke on it.
+    let backendUsed = 'cpu';
+    try {
+      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.22.0/dist/tf-backend-wasm.min.js');
+      tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.22.0/dist/');
+      await tf.setBackend('wasm');
+      backendUsed = 'wasm';
+    } catch (_) {
+      try { await tf.setBackend('webgl'); backendUsed = 'webgl'; }
+      catch (_2) { await tf.setBackend('cpu'); }
+    }
+    await tf.ready();
+    cartModel = await tf.loadGraphModel('https://cdn.jsdelivr.net/gh/pratapvardhan/cartoonizer-with-tfjs@master/models/CartoonGAN/web-uint8/model.json');
+    cart.bar.classList.remove('indet');
+    showBody(cart);
+    console.info('[cartoonize] backend:', backendUsed);
+  } catch (e) { fail(cart, e); }
+});
+
+async function cartRun(imgEl) {
+  const statusEl = $('#cart-status');
+  statusEl.hidden = false;
+  statusEl.textContent = 'stylizing on-device… (~5–10s on CPU)';
+  $('#cart-dl').hidden = true;
+  setStatus(cart, 'INFER', 'busy');
+  let img, padded, resized, normalized, result, squeezed, out;
+  try {
+    img = tf.browser.fromPixels(imgEl);
+    const dim0 = img.shape[0], dim1 = img.shape[1];
+    const pad = (dim0 > dim1) ? [[0, 0], [dim0 - dim1, 0], [0, 0]] : [[dim1 - dim0, 0], [0, 0], [0, 0]];
+    padded = img.pad(pad);
+    const size = 256;
+    resized = tf.image.resizeBilinear(padded, [size, size]).reshape([1, size, size, 3]);
+    const offset = tf.scalar(127.5);
+    normalized = resized.sub(offset).div(offset);
+    const t0 = performance.now();
+    result = await cartModel.predict({ 'input_photo:0': normalized });
+    const ms = Math.round(performance.now() - t0);
+    squeezed = result.squeeze().sub(tf.scalar(-1)).div(tf.scalar(2)).clipByValue(0, 1);
+    const padAmt = Math.round(Math.abs(dim0 - dim1) / Math.max(dim0, dim1) * size);
+    const slice = (dim0 > dim1) ? [0, padAmt, 0] : [padAmt, 0, 0];
+    out = squeezed.slice(slice);
+    const cv = $('#cart-canvas');
+    cv.width = out.shape[1]; cv.height = out.shape[0];
+    await tf.browser.toPixels(out, cv);
+    cartRawImageData = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height);
+    $('#cart-strength-row').hidden = false;
+    cartApplyStrength(+$('#cart-strength').value);
+    statusEl.hidden = true;
+    $('#cart-meta').textContent = 'stylized in ' + ms + 'ms · on-device · 256px working resolution';
+    $('#cart-dl').hidden = false;
+    setStatus(cart, 'READY', 'ok');
+  } catch (e) {
+    console.warn('[cartoonize] inference failed', e);
+    // one automatic retry on the most compatible backend before giving up
+    if (!cartRetried && tf.getBackend() !== 'cpu') {
+      cartRetried = true;
+      try {
+        await tf.setBackend('cpu');
+        await tf.ready();
+        [img, padded, resized, normalized, result, squeezed, out].forEach(t => { try { t && t.dispose(); } catch (_) {} });
+        return cartRun(imgEl);
+      } catch (_) {}
+    }
+    statusEl.textContent = 'failed: ' + (e && e.message ? e.message : 'inference error') + ' — try a smaller photo or a different browser';
+    setStatus(cart, 'READY', 'ok');
+  } finally {
+    [img, padded, resized, normalized, result, squeezed, out].forEach(t => { try { t && t.dispose(); } catch (_) {} });
+  }
+}
+
+const cartDrop = $('#cart-drop'), cartFile = $('#cart-file'), cartPreview = $('#cart-preview');
+cartDrop.addEventListener('click', () => cartFile.click());
+cartDrop.addEventListener('dragover', e => { e.preventDefault(); cartDrop.classList.add('over'); });
+cartDrop.addEventListener('dragleave', () => cartDrop.classList.remove('over'));
+cartDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  cartDrop.classList.remove('over');
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) handleCartFile(f);
+});
+cartFile.addEventListener('change', e => { if (e.target.files[0]) handleCartFile(e.target.files[0]); });
+function handleCartFile(file) {
+  if (!cartModel) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    cartPreview.src = ev.target.result;
+    cartPreview.hidden = false;
+    $('#cart-drop-inner').hidden = true;
+    cartPreview.onload = () => cartRun(cartPreview);
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ================================================================
+   HUD nav — active-section scrollspy + scramble hover (matches index.html)
+   ================================================================ */
+const labNavLinks = $$('.hud .c a');
+const labSecEls = $$('[id^="demo-"]');
+function labNavActive() {
+  const line = scrollY + innerHeight * .35;
+  let cur = null;
+  for (const s of labSecEls) if (s.offsetTop <= line) cur = s.id;
+  labNavLinks.forEach(a => a.classList.toggle('active', a.dataset.sec === cur));
+}
+addEventListener('scroll', labNavActive, { passive: true });
+labNavActive();
+
+const LAB_GLYPHS = '!<>-_\\/[]{}—=+*^?#';
+function labScramble(el) {
+  const orig = el.dataset.text || el.textContent;
+  el.dataset.text = orig;
+  let frame = 0;
+  cancelAnimationFrame(el._raf);
+  (function run() {
+    frame++;
+    el.textContent = [...orig].map((c, i) =>
+      c === ' ' ? ' ' : (i < frame / 2.2 ? c : LAB_GLYPHS[(Math.random() * LAB_GLYPHS.length) | 0])
+    ).join('');
+    if (frame / 2.2 < orig.length) el._raf = requestAnimationFrame(run);
+    else el.textContent = orig;
+  })();
+}
+if (!matchMedia('(hover: none)').matches) {
+  $$('.scr').forEach(el => el.addEventListener('mouseenter', () => labScramble(el)));
 }
 })();
